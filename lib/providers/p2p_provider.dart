@@ -77,6 +77,9 @@ class P2PProvider extends ChangeNotifier {
   // File transfer tracking
   // Maps payloadId -> {attachmentId, postId, fileName, fileType, fileSize}
   final Map<int, Map<String, dynamic>> _pendingFileTransfers = {};
+  
+  // Track files that arrived before their metadata
+  final Map<int, String> _unmatchedReceivedFiles = {};
 
   // QR Code Join Tracking
   String? _targetTeacherName;
@@ -824,6 +827,12 @@ class P2PProvider extends ChangeNotifier {
     };
 
     debugPrint('[P2PProvider] Expecting file: $fileName for post/assign $postId/$assignmentId (payloadId: $payloadId)');
+
+    if (_unmatchedReceivedFiles.containsKey(payloadId)) {
+      debugPrint('[P2PProvider] File payload already received, processing now');
+      final tempFilePath = _unmatchedReceivedFiles.remove(payloadId)!;
+      _onFileReceived(endpointId, payloadId, tempFilePath);
+    }
   }
 
   /// Handle received file payload (student side)
@@ -835,6 +844,7 @@ class P2PProvider extends ChangeNotifier {
     final metadata = _pendingFileTransfers.remove(payloadId);
     if (metadata == null) {
       debugPrint('[P2PProvider] No metadata for received file, skipping');
+      _unmatchedReceivedFiles[payloadId] = tempFilePath;
       return;
     }
 
@@ -850,7 +860,13 @@ class P2PProvider extends ChangeNotifier {
       final fileType = metadata['fileType'] as String;
       final fileSize = metadata['fileSize'] as int;
 
-      final targetPath = '$receivedDir/${attachmentId}_$fileName';
+      String targetPath = '$receivedDir/${attachmentId}_$fileName';
+
+      // Ensure the targetPath has the correct file extension for OpenFilex to work
+      if (fileType != 'unknown' && !targetPath.toLowerCase().endsWith('.$fileType')) {
+        targetPath = '$targetPath.$fileType';
+        debugPrint('[P2PProvider] Adjusted targetPath to include extension: $targetPath');
+      }
 
       // The nearby_connections plugin saves files with the payloadId as name
       // If it returns a content:// URI on Android 10+, we must use the plugin's native copy method
@@ -1191,6 +1207,7 @@ class P2PProvider extends ChangeNotifier {
     _connectedStudents.clear();
     _teacherEndpointId = null;
     _pendingFileTransfers.clear();
+    _unmatchedReceivedFiles.clear();
     _pendingAttachmentCounts.clear();
     _isStudentSyncHost = false;
     _isStudentSyncClient = false;
