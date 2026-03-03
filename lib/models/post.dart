@@ -5,12 +5,14 @@ class Post {
   final String classroomId;
   final String content;
   final DateTime createdAt;
+  final DateTime? scheduledDate;
   final List<Attachment> attachments;
 
   Post({
     required this.id,
     required this.classroomId,
     required this.content,
+    this.scheduledDate,
     DateTime? createdAt,
     List<Attachment>? attachments,
   })  : createdAt = createdAt ?? DateTime.now(),
@@ -22,6 +24,7 @@ class Post {
       'classroomId': classroomId,
       'content': content,
       'createdAt': createdAt.toIso8601String(),
+      if (scheduledDate != null) 'scheduledDate': scheduledDate!.toIso8601String(),
     };
   }
 
@@ -31,6 +34,7 @@ class Post {
       id: map['id'] as String,
       classroomId: map['classroomId'] as String,
       content: map['content'] as String,
+      scheduledDate: map['scheduledDate'] != null ? DateTime.parse(map['scheduledDate'] as String) : null,
       createdAt: DateTime.parse(map['createdAt'] as String),
       attachments: attachments,
     );
@@ -51,6 +55,7 @@ class Post {
       id: json['id'] as String,
       classroomId: json['classroomId'] as String,
       content: json['content'] as String,
+      scheduledDate: json['scheduledDate'] != null ? DateTime.parse(json['scheduledDate'] as String) : null,
       createdAt: DateTime.parse(json['createdAt'] as String),
       attachments: attachmentsList,
     );

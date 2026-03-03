@@ -8,7 +8,9 @@ class Assignment {
   final DateTime? dueDate;
   final double? maxScore;
   final DateTime createdAt;
+  final DateTime? scheduledDate;
   final List<Attachment> attachments;
+  final String? type; // null = normal assignment, 'quiz' = quiz
 
   Assignment({
     required this.id,
@@ -17,6 +19,8 @@ class Assignment {
     required this.description,
     this.dueDate,
     this.maxScore,
+    this.type,
+    this.scheduledDate,
     DateTime? createdAt,
     List<Attachment>? attachments,
   })  : createdAt = createdAt ?? DateTime.now(),
@@ -31,6 +35,8 @@ class Assignment {
       'dueDate': dueDate?.toIso8601String(),
       'maxScore': maxScore,
       'createdAt': createdAt.toIso8601String(),
+      if (scheduledDate != null) 'scheduledDate': scheduledDate!.toIso8601String(),
+      'type': type,
     };
   }
 
@@ -43,8 +49,10 @@ class Assignment {
       description: map['description'] as String,
       dueDate: map['dueDate'] != null ? DateTime.parse(map['dueDate']) : null,
       maxScore: map['maxScore'] as double?,
+      scheduledDate: map['scheduledDate'] != null ? DateTime.parse(map['scheduledDate'] as String) : null,
       createdAt: DateTime.parse(map['createdAt'] as String),
       attachments: attachments,
+      type: map['type'] as String?,
     );
   }
 
@@ -66,8 +74,10 @@ class Assignment {
       description: json['description'] as String,
       dueDate: json['dueDate'] != null ? DateTime.parse(json['dueDate']) : null,
       maxScore: json['maxScore'] as double?,
+      scheduledDate: json['scheduledDate'] != null ? DateTime.parse(json['scheduledDate'] as String) : null,
       createdAt: DateTime.parse(json['createdAt'] as String),
       attachments: attachmentsList,
+      type: json['type'] as String?,
     );
   }
 

@@ -15,6 +15,7 @@ import '../services/permission_service.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'dart:convert';
 import 'teacher_assignment_detail_screen.dart';
+import 'ai_chatbot_screen.dart';
 
 class TeacherDashboardScreen extends StatefulWidget {
   final Classroom classroom;
@@ -36,12 +37,14 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
   final _assignmentDescController = TextEditingController();
   DateTime? _selectedDueDate;
   double? _selectedMaxScore;
+  DateTime? _selectedScheduledDate;
 
   final DatabaseService _dbService = DatabaseService();
   List<Post> _localPosts = [];
   List<Assignment> _localAssignments = [];
   bool _isLive = false;
   bool _isPosting = false;
+  int _selectedNavIndex = 0;
 
   // Selected files for a new post/assignment
   List<PlatformFile> _selectedFiles = [];
@@ -115,7 +118,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
 
     if (_isLive) {
       // Live mode: post via P2P (broadcasts to students + saves to DB)
-      await p2p.createPost(content, filePaths: filePaths);
+      await p2p.createPost(content, filePaths: filePaths, scheduledDate: _selectedScheduledDate);
     } else {
       // Offline mode: just save locally
       final postId = DateTime.now().millisecondsSinceEpoch.toString();
@@ -142,6 +145,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
         id: postId,
         classroomId: widget.classroom.id,
         content: content,
+        scheduledDate: _selectedScheduledDate,
         attachments: attachments,
       );
       await _dbService.savePost(post);
@@ -149,6 +153,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
 
     _postController.clear();
     _selectedFiles.clear();
+    _selectedScheduledDate = null;
     await _loadLocalData();
 
     if (mounted) {
@@ -183,7 +188,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
         .toList();
 
     if (_isLive) {
-      await p2p.createAssignment(title, desc, _selectedDueDate, _selectedMaxScore, filePaths: filePaths);
+      await p2p.createAssignment(title, desc, _selectedDueDate, _selectedMaxScore, filePaths: filePaths, scheduledDate: _selectedScheduledDate);
     } else {
       final assignmentId = DateTime.now().millisecondsSinceEpoch.toString();
       final attachments = <Attachment>[];
@@ -210,6 +215,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
         description: desc,
         dueDate: _selectedDueDate,
         maxScore: _selectedMaxScore,
+        scheduledDate: _selectedScheduledDate,
         attachments: attachments,
       );
       await _dbService.saveAssignment(assignment);
@@ -219,6 +225,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
     _assignmentDescController.clear();
     _selectedDueDate = null;
     _selectedMaxScore = null;
+    _selectedScheduledDate = null;
     _selectedFiles.clear();
     await _loadLocalData();
 
@@ -320,6 +327,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
   }
 
   void _showPostDialog() {
+    _selectedScheduledDate = null;
     _showCreationDialog(isAssignment: false);
   }
 
@@ -328,6 +336,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
     _assignmentDescController.clear();
     _selectedDueDate = null;
     _selectedMaxScore = 100;
+    _selectedScheduledDate = null;
     _showCreationDialog(isAssignment: true);
   }
 
@@ -369,6 +378,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
                             color: Colors.white54),
                         onPressed: () {
                           _selectedFiles.clear();
+                          _selectedScheduledDate = null;
                           Navigator.pop(context);
                         },
                       ),
@@ -508,7 +518,44 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
                           }
                         },
                       ),
-                      const Spacer(),
+                      IconButton(
+                        icon: const Icon(Icons.schedule_rounded, color: Colors.orange),
+                        tooltip: 'Schedule Post/Assignment',
+                        onPressed: () async {
+                          final date = await showDatePicker(
+                            context: context,
+                            initialDate: DateTime.now(),
+                            firstDate: DateTime.now(),
+                            lastDate: DateTime.now().add(const Duration(days: 365)),
+                          );
+                          if (date != null) {
+                            final time = await showTimePicker(
+                              context: context,
+                              initialTime: TimeOfDay.now(),
+                            );
+                            if (time != null) {
+                              setModalState(() {
+                                _selectedScheduledDate = DateTime(
+                                  date.year, date.month, date.day, time.hour, time.minute
+                                );
+                              });
+                            }
+                          }
+                        },
+                      ),
+                      if (_selectedScheduledDate != null)
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                            child: Text(
+                              'Sch: ${DateFormat('MMM d, h:mm a').format(_selectedScheduledDate!)}',
+                              style: const TextStyle(color: Colors.orange, fontSize: 12),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        )
+                      else
+                        const Spacer(),
                       ElevatedButton(
                         onPressed: _isPosting
                             ? null
@@ -537,7 +584,9 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
                                 ),
                               )
                             : Text(
-                                isAssignment ? 'Assign' : 'Post',
+                                _selectedScheduledDate != null 
+                                    ? 'Schedule' 
+                                    : (isAssignment ? 'Assign' : 'Post'),
                                 style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
@@ -575,6 +624,203 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
     return _localAssignments;
   }
 
+  Widget _buildClassroomView(P2PProvider p2p, List<Post> posts) {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF0F0C29),
+            Color(0xFF302B63),
+            Color(0xFF24243E),
+          ],
+        ),
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back_ios,
+                            color: Colors.white70),
+                        onPressed: () {
+                          if (_isLive) p2p.stopAll();
+                          Navigator.pop(context);
+                        },
+                      ),
+                      Expanded(
+                        child: Text(
+                          widget.classroom.name,
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      if (_isLive)
+                        IconButton(
+                          icon: const Icon(
+                            Icons.qr_code_rounded,
+                            color: Color(0xFF00C9A7),
+                            size: 28,
+                          ),
+                          onPressed: _showQrCode,
+                          tooltip: 'Show Login QR Code',
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Info chips row
+                  Row(
+                    children: [
+                      _InfoChip(
+                        icon: Icons.key_rounded,
+                        label: widget.classroom.password,
+                        color: const Color(0xFFFF6B6B),
+                      ),
+                      const SizedBox(width: 10),
+                      if (_isLive)
+                        _InfoChip(
+                          icon: Icons.people_rounded,
+                          label:
+                              '${p2p.connectedStudents.where((s) => s.isAuthenticated).length} students',
+                          color: const Color(0xFF4ECB71),
+                        ),
+                      const SizedBox(width: 10),
+                      _InfoChip(
+                        icon: Icons.article_outlined,
+                        label: '${posts.length} posts',
+                        color: const Color(0xFF6C63FF),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Go Live / Go Offline button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 44,
+                    child: ElevatedButton.icon(
+                      onPressed: _isLive ? _goOffline : _goLive,
+                      icon: Icon(
+                        _isLive
+                            ? Icons.stop_rounded
+                            : Icons.wifi_tethering_rounded,
+                      ),
+                      label: Text(
+                        _isLive
+                            ? 'Stop Broadcasting'
+                            : 'Go Live (Start P2P)',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _isLive
+                            ? Colors.red.shade700
+                            : const Color(0xFF00C9A7),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  if (_isLive) ...[
+                    const SizedBox(height: 10),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color:
+                            Colors.white.withValues(alpha: 0.04),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.greenAccent,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              p2p.statusMessage,
+                              style: TextStyle(
+                                color: Colors.white
+                                    .withValues(alpha: 0.5),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+
+                  // Tab Bar
+                  TabBar(
+                    controller: _tabController,
+                    indicatorColor: const Color(0xFF00C9A7),
+                    labelColor: Colors.white,
+                    unselectedLabelColor: Colors.white54,
+                    tabs: const [
+                      Tab(text: 'Announcements'),
+                      Tab(text: 'Assignments'),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            // Divider
+            Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 20),
+              child: Divider(
+                height: 1,
+                color: Colors.white.withValues(alpha: 0.08),
+              ),
+            ),
+
+            // TabBarView Content
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  // Posts view
+                  _buildPostsView(posts),
+                  
+                  // Assignments view
+                  _buildAssignmentsView(_getMergedAssignments(p2p)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<P2PProvider>(
@@ -582,208 +828,59 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
         final posts = _getMergedPosts(p2p);
 
         return Scaffold(
-          body: Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF0F0C29),
-                  Color(0xFF302B63),
-                  Color(0xFF24243E),
-                ],
-              ),
-            ),
-            child: SafeArea(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header
-                  Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.arrow_back_ios,
-                                  color: Colors.white70),
-                              onPressed: () {
-                                if (_isLive) p2p.stopAll();
-                                Navigator.pop(context);
-                              },
-                            ),
-                            Expanded(
-                              child: Text(
-                                widget.classroom.name,
-                                style: const TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                            if (_isLive)
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.qr_code_rounded,
-                                  color: Color(0xFF00C9A7),
-                                  size: 28,
-                                ),
-                                onPressed: _showQrCode,
-                                tooltip: 'Show Login QR Code',
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Info chips row
-                        Row(
-                          children: [
-                            _InfoChip(
-                              icon: Icons.key_rounded,
-                              label: widget.classroom.password,
-                              color: const Color(0xFFFF6B6B),
-                            ),
-                            const SizedBox(width: 10),
-                            if (_isLive)
-                              _InfoChip(
-                                icon: Icons.people_rounded,
-                                label:
-                                    '${p2p.connectedStudents.where((s) => s.isAuthenticated).length} students',
-                                color: const Color(0xFF4ECB71),
-                              ),
-                            const SizedBox(width: 10),
-                            _InfoChip(
-                              icon: Icons.article_outlined,
-                              label: '${posts.length} posts',
-                              color: const Color(0xFF6C63FF),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 14),
-
-                        // Go Live / Go Offline button
-                        SizedBox(
-                          width: double.infinity,
-                          height: 44,
-                          child: ElevatedButton.icon(
-                            onPressed: _isLive ? _goOffline : _goLive,
-                            icon: Icon(
-                              _isLive
-                                  ? Icons.stop_rounded
-                                  : Icons.wifi_tethering_rounded,
-                            ),
-                            label: Text(
-                              _isLive
-                                  ? 'Stop Broadcasting'
-                                  : 'Go Live (Start P2P)',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: _isLive
-                                  ? Colors.red.shade700
-                                  : const Color(0xFF00C9A7),
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        if (_isLive) ...[
-                          const SizedBox(height: 10),
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 10),
-                            decoration: BoxDecoration(
-                              color:
-                                  Colors.white.withValues(alpha: 0.04),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: const BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: Colors.greenAccent,
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    p2p.statusMessage,
-                                    style: TextStyle(
-                                      color: Colors.white
-                                          .withValues(alpha: 0.5),
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: 16),
-
-                        // Tab Bar
-                        TabBar(
-                          controller: _tabController,
-                          indicatorColor: const Color(0xFF00C9A7),
-                          labelColor: Colors.white,
-                          unselectedLabelColor: Colors.white54,
-                          tabs: const [
-                            Tab(text: 'Announcements'),
-                            Tab(text: 'Assignments'),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Divider
-                  Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 20),
-                    child: Divider(
-                      height: 1,
-                      color: Colors.white.withValues(alpha: 0.08),
-                    ),
-                  ),
-
-                  // TabBarView Content
-                  Expanded(
-                    child: TabBarView(
-                      controller: _tabController,
-                      children: [
-                        // Posts view
-                        _buildPostsView(posts),
-                        
-                        // Assignments view
-                        _buildAssignmentsView(_getMergedAssignments(p2p)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          body: IndexedStack(
+            index: _selectedNavIndex,
+            children: [
+              _buildClassroomView(p2p, posts),
+              const AiChatbotScreen(),
+            ],
           ),
 
-          // FAB for new post / assignment
-          floatingActionButton: FloatingActionButton.extended(
-            onPressed: _tabController.index == 0 ? _showPostDialog : _showAssignmentDialog,
-            backgroundColor: const Color(0xFF6C63FF),
-            icon: const Icon(Icons.add_rounded, color: Colors.white),
-            label: Text(
-               _tabController.index == 0 ? 'New Post' : 'New Assignment',
-               style: const TextStyle(color: Colors.white),
+          // FAB only on Classroom tab
+          floatingActionButton: _selectedNavIndex == 0
+              ? FloatingActionButton.extended(
+                  onPressed: _tabController.index == 0 ? _showPostDialog : _showAssignmentDialog,
+                  backgroundColor: const Color(0xFF6C63FF),
+                  icon: const Icon(Icons.add_rounded, color: Colors.white),
+                  label: Text(
+                     _tabController.index == 0 ? 'New Post' : 'New Assignment',
+                     style: const TextStyle(color: Colors.white),
+                  ),
+                )
+              : null,
+
+          // Bottom Navigation Bar
+          bottomNavigationBar: Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFF1A1A2E),
+              border: Border(
+                top: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.06),
+                ),
+              ),
+            ),
+            child: BottomNavigationBar(
+              currentIndex: _selectedNavIndex,
+              onTap: (index) => setState(() => _selectedNavIndex = index),
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              selectedItemColor: const Color(0xFF6C63FF),
+              unselectedItemColor: Colors.white38,
+              selectedFontSize: 12,
+              unselectedFontSize: 12,
+              type: BottomNavigationBarType.fixed,
+              items: const [
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.school_rounded),
+                  activeIcon: Icon(Icons.school_rounded),
+                  label: 'Classroom',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.auto_awesome_outlined),
+                  activeIcon: Icon(Icons.auto_awesome),
+                  label: 'AI Assistant',
+                ),
+              ],
             ),
           ),
         );
@@ -912,6 +1009,27 @@ class _PostCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (post.scheduledDate != null && post.scheduledDate!.isAfter(DateTime.now()))
+              Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.schedule_rounded, size: 14, color: Colors.orange),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Scheduled for ${DateFormat('MMM d, y, h:mm a').format(post.scheduledDate!)}',
+                      style: const TextStyle(color: Colors.orange, fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
             if (post.content.isNotEmpty) ...[
               Text(
                 post.content,
@@ -1206,6 +1324,27 @@ class _AssignmentCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header
+              if (assignment.scheduledDate != null && assignment.scheduledDate!.isAfter(DateTime.now()))
+                Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.schedule_rounded, size: 14, color: Colors.orange),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Scheduled for ${DateFormat('MMM d, y, h:mm a').format(assignment.scheduledDate!)}',
+                        style: const TextStyle(color: Colors.orange, fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1213,13 +1352,17 @@ class _AssignmentCard extends StatelessWidget {
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF6C63FF), Color(0xFF5A52D5)],
+                      gradient: LinearGradient(
+                        colors: assignment.type == 'quiz'
+                            ? [const Color(0xFFFF6B6B), const Color(0xFFFF8E53)]
+                            : [const Color(0xFF6C63FF), const Color(0xFF5A52D5)],
                       ),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(
-                      Icons.assignment_rounded,
+                    child: Icon(
+                      assignment.type == 'quiz'
+                          ? Icons.quiz_rounded
+                          : Icons.assignment_rounded,
                       color: Colors.white,
                       size: 22,
                     ),
@@ -1254,7 +1397,31 @@ class _AssignmentCard extends StatelessWidget {
               const SizedBox(height: 16),
 
               // Description
-              if (assignment.description.isNotEmpty) ...[
+              if (assignment.type == 'quiz') ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF8E53).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFFF8E53).withValues(alpha: 0.2)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.quiz_outlined, size: 16, color: Color(0xFFFF8E53)),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Quiz • ${assignment.maxScore?.toInt() ?? 0} questions',
+                        style: const TextStyle(
+                          color: Color(0xFFFF8E53),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ] else if (assignment.description.isNotEmpty) ...[
                 Text(
                   assignment.description,
                   style: TextStyle(

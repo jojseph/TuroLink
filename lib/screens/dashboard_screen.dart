@@ -8,6 +8,7 @@ import 'p2p_hub_screen.dart';
 import 'teacher_dashboard_screen.dart';
 import 'student_dashboard_screen.dart';
 import 'home_screen.dart';
+import 'quiz_bank_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -185,6 +186,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ],
                       ),
                     ),
+                    if (profile.isTeacher)
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              const Color(0xFFFF6B6B).withValues(alpha: 0.15),
+                              const Color(0xFFFF8E53).withValues(alpha: 0.15),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: const Color(0xFFFF6B6B).withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: IconButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const QuizBankScreen(),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.quiz_rounded,
+                              color: Color(0xFFFF6B6B), size: 20),
+                          tooltip: 'Quiz Bank',
+                        ),
+                      ),
+                    const SizedBox(width: 4),
                     IconButton(
                       onPressed: _logout,
                       icon: const Icon(Icons.logout_rounded,

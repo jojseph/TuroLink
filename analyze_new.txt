@@ -1,0 +1,51 @@
+﻿Analyzing TuroLink...                                           
+
+warning - Unused import: 'package:path_provider/path_provider.dart' - lib\providers\p2p_provider.dart:4:8 - unused_import
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\providers\p2p_provider.dart:1097:15 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\providers\p2p_provider.dart:1098:15 - use_null_aware_elements
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\p2p_hub_screen.dart:437:31 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\p2p_hub_screen.dart:443:45 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\screens\qr_scanner_screen.dart:43:57 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\screens\qr_scanner_screen.dart:44:65 - use_build_context_synchronously
+   info - Constructors in '@immutable' classes should be declared as 'const' - lib\screens\qr_scanner_screen.dart:189:3 - prefer_const_constructors_in_immutables
+   info - The local variable '_borderLength' starts with an underscore - lib\screens\qr_scanner_screen.dart:244:11 - no_leading_underscores_for_local_identifiers
+   info - The local variable '_cutOutSize' starts with an underscore - lib\screens\qr_scanner_screen.dart:247:11 - no_leading_underscores_for_local_identifiers
+   info - The private field _selectedFiles could be 'final' - lib\screens\student_assignment_detail_screen.dart:30:22 - prefer_final_fields
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\student_assignment_detail_screen.dart:183:66 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\student_assignment_detail_screen.dart:232:45 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\student_assignment_detail_screen.dart:275:59 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\student_assignment_detail_screen.dart:298:60 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\student_assignment_detail_screen.dart:317:60 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\student_assignment_detail_screen.dart:338:45 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\student_assignment_detail_screen.dart:340:64 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps - lib\screens\student_dashboard_screen.dart:156:42 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\screens\student_dashboard_screen.dart:157:38 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\screens\student_dashboard_screen.dart:158:45 - use_build_context_synchronously
+   info - Unnecessary use of multiple underscores - lib\screens\student_dashboard_screen.dart:667:35 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\student_dashboard_screen.dart:667:39 - unnecessary_underscores
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\teacher_assignment_detail_screen.dart:73:59 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\teacher_assignment_detail_screen.dart:95:33 - use_build_context_synchronously
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\teacher_assignment_detail_screen.dart:144:100 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\teacher_assignment_detail_screen.dart:153:102 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\teacher_assignment_detail_screen.dart:175:89 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\teacher_assignment_detail_screen.dart:189:145 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\teacher_assignment_detail_screen.dart:200:73 - deprecated_member_use
+warning - Duplicate import - lib\screens\teacher_dashboard_screen.dart:13:8 - duplicate_import
+   info - The private field _isPosting could be 'final' - lib\screens\teacher_dashboard_screen.dart:45:8 - prefer_final_fields
+   info - The private field _selectedFiles could be 'final' - lib\screens\teacher_dashboard_screen.dart:49:22 - prefer_final_fields
+   info - Don't use 'BuildContext's across async gaps - lib\screens\teacher_dashboard_screen.dart:90:42 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\screens\teacher_dashboard_screen.dart:92:38 - use_build_context_synchronously
+warning - The declaration '_pickFiles' isn't referenced - lib\screens\teacher_dashboard_screen.dart:298:16 - unused_element
+warning - The '!' will have no effect because the receiver can't be null - lib\services\p2p_service.dart:193:46 - unnecessary_non_null_assertion
+
+C:\Users\joseph\.gemini\antigravity\scratch\flutter_setup\
+flutter\bin\flutter.bat : 37 issues found. (ran in 11.1s)
+At line:1 char:1
++ C:\Users\joseph\.gemini\antigravity\scratch\flutter_setu
+p\flutter\bin ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (37 issues fo 
+   und. (ran in 11.1s):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 

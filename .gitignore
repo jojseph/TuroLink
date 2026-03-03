@@ -49,3 +49,4 @@ adb_logs.txt
 analyze_output.txt
 build_log.txt
 test_nearby.dart
+agent/

@@ -13,6 +13,7 @@ import '../providers/p2p_provider.dart';
 import '../providers/profile_provider.dart';
 import '../services/database_service.dart';
 import 'student_assignment_detail_screen.dart';
+import 'ai_chatbot_screen.dart';
 
 class StudentDashboardScreen extends StatefulWidget {
   final Classroom classroom;
@@ -30,6 +31,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen>
   final DatabaseService _dbService = DatabaseService();
   List<Post> _localPosts = [];
   List<Assignment> _localAssignments = [];
+  int _selectedNavIndex = 0;
 
   @override
   void initState() {
@@ -52,21 +54,38 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen>
     }
   }
 
-  /// Decide which posts to show: live P2P if connected, otherwise local DB
   List<Post> _getPosts(P2PProvider p2p) {
+    List<Post> sourcePosts;
     if (_isConnected(p2p)) {
-      if (p2p.posts.isNotEmpty) return p2p.posts;
-      return []; // Return empty list to correctly show empty state if live but no posts
+      if (p2p.posts.isNotEmpty) {
+        sourcePosts = p2p.posts;
+      } else {
+        sourcePosts = []; // Return empty list to correctly show empty state if live but no posts
+      }
+    } else {
+      sourcePosts = _localPosts;
     }
-    return _localPosts;
+    
+    // Filter out posts that are scheduled for the future
+    final now = DateTime.now();
+    return sourcePosts.where((p) => p.scheduledDate == null || !p.scheduledDate!.isAfter(now)).toList();
   }
 
   List<Assignment> _getAssignments(P2PProvider p2p) {
+    List<Assignment> sourceAssignments;
     if (_isConnected(p2p)) {
-      if (p2p.assignments.isNotEmpty) return p2p.assignments;
-      return []; // Return empty list to correctly show empty state if live but no assignments
+      if (p2p.assignments.isNotEmpty) {
+        sourceAssignments = p2p.assignments;
+      } else {
+        sourceAssignments = []; // Return empty list to correctly show empty state if live but no assignments
+      }
+    } else {
+      sourceAssignments = _localAssignments;
     }
-    return _localAssignments;
+
+    // Filter out assignments that are scheduled for the future
+    final now = DateTime.now();
+    return sourceAssignments.where((a) => a.scheduledDate == null || !a.scheduledDate!.isAfter(now)).toList();
   }
 
   bool _isConnected(P2PProvider p2p) {
@@ -187,6 +206,183 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen>
     );
   }
 
+  Widget _buildClassroomView(P2PProvider p2p, List<Post> posts, List<Assignment> assignments, bool connected) {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF0F0C29),
+            Color(0xFF302B63),
+            Color(0xFF24243E),
+          ],
+        ),
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back_ios,
+                            color: Colors.white70),
+                        onPressed: () {
+                          if (connected) p2p.stopAll();
+                          Navigator.pop(context);
+                        },
+                      ),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment:
+                              CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.classroom.name,
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Teacher: ${widget.classroom.teacherName}',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.white
+                                    .withValues(alpha: 0.5),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (!connected) // Only show if offline and not connected to teacher
+                        Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF00C9A7).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFF00C9A7).withValues(alpha: 0.3)),
+                          ),
+                          child: IconButton(
+                            icon: const Icon(Icons.share_rounded, color: Color(0xFF00C9A7), size: 20),
+                            onPressed: () => _showShareUpdatesDialog(p2p),
+                            tooltip: 'Share offline updates to peers',
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Connection status
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: (connected
+                              ? Colors.greenAccent
+                              : Colors.white)
+                          .withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: (connected
+                                ? Colors.greenAccent
+                                : Colors.white38)
+                            .withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: connected
+                                ? Colors.greenAccent
+                                : Colors.grey,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            connected
+                                ? (p2p.state == P2PState.advertising ? 'Sharing live with peers...' : 'Connected to teacher')
+                                : 'Offline — viewing saved posts',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.7),
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                        if (connected)
+                          InkWell(
+                            onTap: () => p2p.stopAll(),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.redAccent.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Text('Disconnect', style: TextStyle(color: Colors.redAccent, fontSize: 12, fontWeight: FontWeight.bold)),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Tab Bar
+                  TabBar(
+                    controller: _tabController,
+                    indicatorColor: const Color(0xFF00C9A7),
+                    labelColor: Colors.white,
+                    unselectedLabelColor: Colors.white54,
+                    tabs: const [
+                      Tab(text: 'Announcements'),
+                      Tab(text: 'Assignments'),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+          // Divider
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Divider(
+              color: Colors.white.withValues(alpha: 0.08),
+            ),
+          ),
+
+          // TabBarView Content
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                // Posts view
+                _buildPostsView(posts, connected, p2p),
+                
+                // Assignments view
+                _buildAssignmentsView(assignments, connected, p2p),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<P2PProvider>(
@@ -196,180 +392,49 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen>
         final connected = _isConnected(p2p);
 
         return Scaffold(
-          body: Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF0F0C29),
-                  Color(0xFF302B63),
-                  Color(0xFF24243E),
-                ],
+          body: IndexedStack(
+            index: _selectedNavIndex,
+            children: [
+              _buildClassroomView(p2p, posts, assignments, connected),
+              const AiChatbotScreen(),
+            ],
+          ),
+
+          // Bottom Navigation Bar
+          bottomNavigationBar: Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFF1A1A2E),
+              border: Border(
+                top: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.06),
+                ),
               ),
             ),
-            child: SafeArea(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header
-                  Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.arrow_back_ios,
-                                  color: Colors.white70),
-                              onPressed: () {
-                                if (connected) p2p.stopAll();
-                                Navigator.pop(context);
-                              },
-                            ),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    widget.classroom.name,
-                                    style: const TextStyle(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Teacher: ${widget.classroom.teacherName}',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: Colors.white
-                                          .withValues(alpha: 0.5),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            if (!connected) // Only show if offline and not connected to teacher
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF00C9A7).withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: const Color(0xFF00C9A7).withValues(alpha: 0.3)),
-                                ),
-                                child: IconButton(
-                                  icon: const Icon(Icons.share_rounded, color: Color(0xFF00C9A7), size: 20),
-                                  onPressed: () => _showShareUpdatesDialog(p2p),
-                                  tooltip: 'Share offline updates to peers',
-                                ),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Connection status
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: (connected
-                                    ? Colors.greenAccent
-                                    : Colors.white)
-                                .withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: (connected
-                                      ? Colors.greenAccent
-                                      : Colors.white38)
-                                  .withValues(alpha: 0.3),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 8,
-                                height: 8,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: connected
-                                      ? Colors.greenAccent
-                                      : Colors.grey,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  connected
-                                      ? (p2p.state == P2PState.advertising ? 'Sharing live with peers...' : 'Connected to teacher')
-                                      : 'Offline — viewing saved posts',
-                                  style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.7),
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ),
-                              if (connected)
-                                InkWell(
-                                  onTap: () => p2p.stopAll(),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: Colors.redAccent.withValues(alpha: 0.2),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: const Text('Disconnect', style: TextStyle(color: Colors.redAccent, fontSize: 12, fontWeight: FontWeight.bold)),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        
-                        // Tab Bar
-                        TabBar(
-                          controller: _tabController,
-                          indicatorColor: const Color(0xFF00C9A7),
-                          labelColor: Colors.white,
-                          unselectedLabelColor: Colors.white54,
-                          tabs: const [
-                            Tab(text: 'Announcements'),
-                            Tab(text: 'Assignments'),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-
-                // Divider
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Divider(
-                    color: Colors.white.withValues(alpha: 0.08),
-                  ),
+            child: BottomNavigationBar(
+              currentIndex: _selectedNavIndex,
+              onTap: (index) => setState(() => _selectedNavIndex = index),
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              selectedItemColor: const Color(0xFF6C63FF),
+              unselectedItemColor: Colors.white38,
+              selectedFontSize: 12,
+              unselectedFontSize: 12,
+              type: BottomNavigationBarType.fixed,
+              items: const [
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.school_rounded),
+                  activeIcon: Icon(Icons.school_rounded),
+                  label: 'Classroom',
                 ),
-
-                // TabBarView Content
-                Expanded(
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      // Posts view
-                      _buildPostsView(posts, connected, p2p),
-                      
-                      // Assignments view
-                      _buildAssignmentsView(assignments, connected, p2p),
-                    ],
-                  ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.auto_awesome_outlined),
+                  activeIcon: Icon(Icons.auto_awesome),
+                  label: 'AI Assistant',
                 ),
               ],
             ),
           ),
-        ),
-      );
+        );
     },
     );
   }
@@ -825,13 +890,17 @@ class _StudentAssignmentCard extends StatelessWidget {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF6C63FF), Color(0xFF5A52D5)],
+                    gradient: LinearGradient(
+                      colors: assignment.type == 'quiz'
+                          ? [const Color(0xFFFF6B6B), const Color(0xFFFF8E53)]
+                          : [const Color(0xFF6C63FF), const Color(0xFF5A52D5)],
                     ),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
-                    Icons.assignment_rounded,
+                  child: Icon(
+                    assignment.type == 'quiz'
+                        ? Icons.quiz_rounded
+                        : Icons.assignment_rounded,
                     color: Colors.white,
                     size: 22,
                   ),
@@ -841,13 +910,41 @@ class _StudentAssignmentCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        assignment.title,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              assignment.title,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                          if (assignment.type == 'quiz')
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFF8E53)
+                                    .withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: const Color(0xFFFF8E53)
+                                      .withValues(alpha: 0.4),
+                                ),
+                              ),
+                              child: const Text(
+                                'Quiz',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFFFF8E53),
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -865,7 +962,10 @@ class _StudentAssignmentCard extends StatelessWidget {
             const SizedBox(height: 14),
 
             // Description
-            if (assignment.description.isNotEmpty) ...[
+            if (assignment.type == 'quiz') ...[
+              _buildQuizSummary(assignment),
+              const SizedBox(height: 14),
+            ] else if (assignment.description.isNotEmpty) ...[
               Text(
                 assignment.description,
                 maxLines: 2,
@@ -957,6 +1057,42 @@ class _StudentAssignmentCard extends StatelessWidget {
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildQuizSummary(Assignment assignment) {
+    int questionCount = 0;
+    try {
+      final quizData = jsonDecode(assignment.description) as Map<String, dynamic>;
+      final items = quizData['items'] as List?;
+      questionCount = items?.length ?? 0;
+    } catch (_) {
+      // If JSON parsing fails, just show a generic summary
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFF8E53).withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFFF8E53).withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.quiz_outlined, size: 16, color: Color(0xFFFF8E53)),
+          const SizedBox(width: 8),
+          Text(
+            questionCount > 0
+                ? '$questionCount question${questionCount == 1 ? '' : 's'} • ${assignment.maxScore?.toInt() ?? questionCount} pts'
+                : 'Quiz',
+            style: const TextStyle(
+              color: Color(0xFFFF8E53),
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
       ),
     );
   }

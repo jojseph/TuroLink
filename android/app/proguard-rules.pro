@@ -21,3 +21,8 @@
 # Keep Dart/Flutter generated classes
 -dontwarn io.flutter.embedding.**
 -keep class io.flutter.embedding.** { *; }
+
+# MediaPipe/LiteRT dependencies for Flutter Gemma
+-keep class com.google.mediapipe.** { *; }
+-dontwarn com.google.mediapipe.**
+-dontwarn com.google.protobuf.**

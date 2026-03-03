@@ -5,6 +5,7 @@ import '../models/attachment.dart';
 import '../models/user_profile.dart';
 import '../models/assignment.dart';
 import '../models/submission.dart';
+import '../models/quiz.dart';
 
 class DatabaseService {
   static Database? _database;
@@ -21,7 +22,7 @@ class DatabaseService {
 
     return openDatabase(
       path,
-      version: 3,
+      version: 5,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE user_profile (
@@ -46,12 +47,14 @@ class DatabaseService {
             classroomId TEXT NOT NULL,
             content TEXT NOT NULL,
             createdAt TEXT NOT NULL,
+            scheduledDate TEXT,
             FOREIGN KEY (classroomId) REFERENCES classrooms (id)
           )
         ''');
         await _createAttachmentsTable(db);
         await _createAssignmentsTable(db);
         await _createSubmissionsTable(db);
+        await _createQuizTables(db);
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
@@ -71,6 +74,23 @@ class DatabaseService {
             SELECT id, postId, fileName, fileType, filePath, fileSize FROM _attachments_old
           ''');
           await db.execute('DROP TABLE _attachments_old');
+        }
+        if (oldVersion < 4) {
+          await _createQuizTables(db);
+          // Add type column to assignments
+          try {
+            await db.execute('ALTER TABLE assignments ADD COLUMN type TEXT');
+          } catch (_) {
+            // Column may already exist
+          }
+        }
+        if (oldVersion < 5) {
+          try {
+            await db.execute('ALTER TABLE posts ADD COLUMN scheduledDate TEXT');
+          } catch (_) {}
+          try {
+            await db.execute('ALTER TABLE assignments ADD COLUMN scheduledDate TEXT');
+          } catch (_) {}
         }
       },
     );
@@ -100,7 +120,9 @@ class DatabaseService {
         description TEXT NOT NULL,
         dueDate TEXT,
         maxScore REAL,
-        createdAt TEXT NOT NULL
+        createdAt TEXT NOT NULL,
+        scheduledDate TEXT,
+        type TEXT
       )
     ''');
   }
@@ -432,5 +454,80 @@ class DatabaseService {
           conflictAlgorithm: ConflictAlgorithm.replace);
     }
     await batch.commit(noResult: true);
+  }
+
+  // ─── Quiz Tables ───
+
+  Future<void> _createQuizTables(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS quizzes (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        description TEXT NOT NULL DEFAULT '',
+        createdAt TEXT NOT NULL
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS quiz_items (
+        id TEXT PRIMARY KEY,
+        quizId TEXT NOT NULL,
+        question TEXT NOT NULL,
+        choices TEXT NOT NULL,
+        correctIndex INTEGER NOT NULL,
+        orderIndex INTEGER NOT NULL DEFAULT 0,
+        FOREIGN KEY (quizId) REFERENCES quizzes (id) ON DELETE CASCADE
+      )
+    ''');
+  }
+
+  // ─── Quizzes ───
+
+  Future<void> saveQuiz(Quiz quiz) async {
+    final db = await database;
+    await db.insert('quizzes', quiz.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace);
+    // Delete old items and re-insert
+    await db.delete('quiz_items', where: 'quizId = ?', whereArgs: [quiz.id]);
+    for (final item in quiz.items) {
+      await db.insert('quiz_items', item.toMap(),
+          conflictAlgorithm: ConflictAlgorithm.replace);
+    }
+  }
+
+  Future<List<Quiz>> getAllQuizzes() async {
+    final db = await database;
+    final maps = await db.query('quizzes', orderBy: 'createdAt DESC');
+    final quizzes = <Quiz>[];
+    for (final m in maps) {
+      final quizId = m['id'] as String;
+      final items = await getQuizItemsForQuiz(quizId);
+      quizzes.add(Quiz.fromMap(m, items: items));
+    }
+    return quizzes;
+  }
+
+  Future<Quiz?> getQuiz(String id) async {
+    final db = await database;
+    final maps = await db.query('quizzes', where: 'id = ?', whereArgs: [id], limit: 1);
+    if (maps.isEmpty) return null;
+    final items = await getQuizItemsForQuiz(id);
+    return Quiz.fromMap(maps.first, items: items);
+  }
+
+  Future<void> deleteQuiz(String id) async {
+    final db = await database;
+    await db.delete('quiz_items', where: 'quizId = ?', whereArgs: [id]);
+    await db.delete('quizzes', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<List<QuizItem>> getQuizItemsForQuiz(String quizId) async {
+    final db = await database;
+    final maps = await db.query(
+      'quiz_items',
+      where: 'quizId = ?',
+      whereArgs: [quizId],
+      orderBy: 'orderIndex ASC',
+    );
+    return maps.map((m) => QuizItem.fromMap(m)).toList();
   }
 }

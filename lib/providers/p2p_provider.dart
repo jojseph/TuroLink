@@ -146,7 +146,7 @@ class P2PProvider extends ChangeNotifier {
 
   /// Teacher: Create a new post and broadcast to all connected students
   Future<Post> createPost(String content,
-      {List<String> filePaths = const []}) async {
+      {List<String> filePaths = const [], DateTime? scheduledDate}) async {
     // Build attachments from file paths
     final attachments = <Attachment>[];
     for (final path in filePaths) {
@@ -186,6 +186,7 @@ class P2PProvider extends ChangeNotifier {
       id: postId,
       classroomId: _currentClassroom!.id,
       content: content,
+      scheduledDate: scheduledDate,
       attachments: updatedAttachments,
     );
 
@@ -242,7 +243,7 @@ class P2PProvider extends ChangeNotifier {
 
   /// Teacher: Create a new assignment and broadcast to all connected students
   Future<Assignment> createAssignment(String title, String description, DateTime? dueDate, double? maxScore,
-      {List<String> filePaths = const []}) async {
+      {List<String> filePaths = const [], DateTime? scheduledDate}) async {
     final attachments = <Attachment>[];
     for (final path in filePaths) {
       final file = File(path);
@@ -280,6 +281,7 @@ class P2PProvider extends ChangeNotifier {
       description: description,
       dueDate: dueDate,
       maxScore: maxScore,
+      scheduledDate: scheduledDate,
       attachments: updatedAttachments,
     );
 
