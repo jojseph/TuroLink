@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 import '../services/ai_chat_service.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:lucide_icons/lucide_icons.dart';
+
 
 class AiChatbotScreen extends StatefulWidget {
   const AiChatbotScreen({super.key});
@@ -37,8 +40,12 @@ class _AiChatbotScreenState extends State<AiChatbotScreen>
   @override
   void initState() {
     super.initState();
-    _loadSavedToken();
-    _initModel();
+    _initializeApp();
+  }
+
+  Future<void> _initializeApp() async {
+    await _loadSavedToken();
+    await _initModel();
   }
 
   Future<void> _loadSavedToken() async {
@@ -55,7 +62,8 @@ class _AiChatbotScreenState extends State<AiChatbotScreen>
   }
 
   Future<void> _initModel() async {
-    await _aiService.init();
+    final token = _hfTokenController.text.trim();
+    await _aiService.init(hfToken: token.isEmpty ? null : token);
     if (mounted) setState(() {});
   }
 
@@ -157,6 +165,26 @@ class _AiChatbotScreenState extends State<AiChatbotScreen>
     _processSummary(text, pdfFile, pdfName);
   }
 
+  Future<void> _stopGeneration() async {
+    if (!_isGenerating) return;
+    
+    try {
+      if (_responseSubscription != null) {
+        await _responseSubscription?.cancel();
+        _responseSubscription = null;
+      }
+      await _aiService.stopGeneration();
+    } catch (e) {
+      debugPrint('Error stopping generation: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isGenerating = false;
+        });
+      }
+    }
+  }
+
   Future<void> _processSummary(String text, File? pdfFile, String pdfName) async {
     String prompt;
 
@@ -176,16 +204,13 @@ class _AiChatbotScreenState extends State<AiChatbotScreen>
           return;
         }
 
-        if (extractedText.length > 500) {
-          extractedText = '${extractedText.substring(0, 500)}\n[...text truncated]';
-        }
-
-        if (extractedText.length > 500) {
-           await _aiService.clearHistory();
+        // Truncate very long texts to fit the model's context window
+        if (extractedText.length > 3000) {
+          extractedText = '${extractedText.substring(0, 3000)}\n[...remaining text truncated for length]';
         }
 
         if (text.isEmpty) {
-          prompt = 'Summarize the following document:\n$extractedText';
+          prompt = 'You are an AI assistant. Read the following document carefully and provide a clear, concise summary covering all the main points.\n\nDocument:\n$extractedText\n\nSummary:';
         } else {
           prompt = '$text\n\nDocument:\n$extractedText';
         }
@@ -200,7 +225,7 @@ class _AiChatbotScreenState extends State<AiChatbotScreen>
         return;
       }
     } else {
-      prompt = 'Summarize: $text';
+      prompt = 'You are an AI assistant. Read the following text carefully and provide a clear, concise summary covering all the main points.\n\nText:\n$text\n\nSummary:';
     }
 
     final buffer = StringBuffer();
@@ -265,17 +290,7 @@ class _AiChatbotScreenState extends State<AiChatbotScreen>
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF0F0C29),
-            Color(0xFF302B63),
-            Color(0xFF24243E),
-          ],
-        ),
-      ),
+      color: Theme.of(context).colorScheme.surface,
       child: SafeArea(
         child: Column(
           children: [
@@ -297,24 +312,21 @@ class _AiChatbotScreenState extends State<AiChatbotScreen>
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF6C63FF), Color(0xFF00C9A7)],
-              ),
-              borderRadius: BorderRadius.circular(12),
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(14),
             ),
-            child: const Icon(Icons.auto_awesome, color: Colors.white, size: 22),
+            child: const Icon(LucideIcons.sparkles, color: Color(0xFF6C63FF), size: 22),
           ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'AI Summarizer',
-                  style: TextStyle(
-                    fontSize: 18,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -335,7 +347,7 @@ class _AiChatbotScreenState extends State<AiChatbotScreen>
                     const SizedBox(width: 6),
                     Text(
                       _aiService.isModelLoaded
-                          ? 'Gemma 3 1B • Ready'
+                          ? 'Ready'
                           : (_isDownloading
                               ? 'Downloading $_downloadProgress%…'
                               : (_aiService.isLoading
@@ -343,7 +355,7 @@ class _AiChatbotScreenState extends State<AiChatbotScreen>
                                   : 'Model not installed')),
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.white.withValues(alpha: 0.5),
+                        color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
                       ),
                     ),
                   ],
@@ -353,7 +365,7 @@ class _AiChatbotScreenState extends State<AiChatbotScreen>
           ),
         ],
       ),
-    );
+    ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.2, end: 0);
   }
 
   Widget _buildMainContent() {
@@ -364,8 +376,8 @@ class _AiChatbotScreenState extends State<AiChatbotScreen>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.error_outline_rounded,
-                  size: 56, color: Colors.redAccent.withValues(alpha: 0.6)),
+              const Icon(LucideIcons.alertCircle,
+                  size: 56, color: Colors.redAccent),
               const SizedBox(height: 16),
               const Text(
                 'Failed to load AI model',
@@ -390,7 +402,7 @@ class _AiChatbotScreenState extends State<AiChatbotScreen>
                   });
                   _initModel();
                 },
-                icon: const Icon(Icons.refresh_rounded),
+                icon: const Icon(LucideIcons.refreshCw),
                 label: const Text('Retry'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF6C63FF),
@@ -425,8 +437,8 @@ class _AiChatbotScreenState extends State<AiChatbotScreen>
                 ),
                 Text(
                   '$_downloadProgress%',
-                  style: const TextStyle(
-                      color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -434,11 +446,11 @@ class _AiChatbotScreenState extends State<AiChatbotScreen>
             Text(
               'Downloading Gemma 3 1B AI Model',
               style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.8), fontSize: 16, fontWeight: FontWeight.w500),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.8), fontSize: 16, fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 8),
             Text(
-              'This is a 1.2GB download and may take a while.',
+              'This is a ~0.5GB download and may take a while.',
               style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.4), fontSize: 13),
             ),
@@ -472,8 +484,8 @@ class _AiChatbotScreenState extends State<AiChatbotScreen>
                   ),
                   borderRadius: BorderRadius.circular(24),
                 ),
-                child: Icon(Icons.download_rounded,
-                    size: 36, color: Colors.white.withValues(alpha: 0.8)),
+                child: const Icon(LucideIcons.download,
+                    size: 36, color: Colors.white),
               ),
               const SizedBox(height: 24),
               const Text(
@@ -497,9 +509,9 @@ class _AiChatbotScreenState extends State<AiChatbotScreen>
               const SizedBox(height: 24),
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.2)),
                 ),
                 child: TextField(
                   controller: _hfTokenController,
@@ -510,7 +522,7 @@ class _AiChatbotScreenState extends State<AiChatbotScreen>
                     hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    prefixIcon: Icon(Icons.key_rounded, color: Colors.white.withValues(alpha: 0.4)),
+                    prefixIcon: const Icon(LucideIcons.key, color: Colors.white),
                   ),
                 ),
               ),
@@ -520,9 +532,9 @@ class _AiChatbotScreenState extends State<AiChatbotScreen>
                 height: 50,
                 child: ElevatedButton.icon(
                   onPressed: _startDownload,
-                  icon: const Icon(Icons.file_download_rounded),
+                  icon: const Icon(LucideIcons.fileDown),
                   label: const Text(
-                    'Download AI Model (~1.2GB)',
+                    'Download AI Model (~0.5GB)',
                     style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                   ),
                   style: ElevatedButton.styleFrom(
@@ -583,37 +595,32 @@ class _AiChatbotScreenState extends State<AiChatbotScreen>
                 width: 72,
                 height: 72,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      const Color(0xFF6C63FF).withValues(alpha: 0.2),
-                      const Color(0xFF00C9A7).withValues(alpha: 0.2),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(20),
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(24),
                 ),
-                child: Icon(Icons.description_rounded,
+                child: Icon(LucideIcons.fileText,
                     size: 32,
-                    color: Colors.white.withValues(alpha: 0.3)),
+                    color: Theme.of(context).colorScheme.primary),
               ),
               const SizedBox(height: 20),
               Text(
                 'Ready to Summarize',
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.5),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontSize: 17,
                   fontWeight: FontWeight.w600,
                 ),
-              ),
+              ).animate().fadeIn(duration: 400.ms, delay: 100.ms).slideY(begin: 0.1, end: 0),
               const SizedBox(height: 8),
               Text(
                 'Attach a PDF or paste some text below\nto get an instant summary.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.3),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
                   fontSize: 13,
                   height: 1.5,
                 ),
-              ),
+              ).animate().fadeIn(duration: 400.ms, delay: 200.ms).slideY(begin: 0.1, end: 0),
             ],
           ),
         ),
@@ -628,36 +635,36 @@ class _AiChatbotScreenState extends State<AiChatbotScreen>
         children: [
           Row(
             children: [
-              Icon(Icons.notes_rounded, color: Colors.white.withValues(alpha: 0.5), size: 20),
+              const Icon(LucideIcons.alignLeft, color: Colors.grey, size: 20),
               const SizedBox(width: 8),
               Text(
                  _documentName != null ? 'Summary of $_documentName' : 'Summary',
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 14, fontWeight: FontWeight.w500),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 14, fontWeight: FontWeight.bold),
               ),
             ],
           ),
           const SizedBox(height: 16),
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+              color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.2)),
             ),
             child: _isGenerating && (_currentSummary == null || _currentSummary!.isEmpty)
                 ? Row(
                     children: [
-                      const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF6C63FF))),
+                      SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Theme.of(context).colorScheme.primary)),
                       const SizedBox(width: 12),
-                      Text('Analyzing document...', style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 15)),
+                      Text('Analyzing document...', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 15)),
                     ],
                   )
                 : Text(
                     _currentSummary ?? '',
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 15, height: 1.6),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 15, height: 1.6),
                   ),
-          ),
+          ).animate().fadeIn(duration: 300.ms).scaleXY(begin: 0.95, end: 1, curve: Curves.easeOutCubic),
         ],
       ),
     );
@@ -699,19 +706,19 @@ class _AiChatbotScreenState extends State<AiChatbotScreen>
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: const Color(0xFF6C63FF).withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(12),
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: const Color(0xFF6C63FF).withValues(alpha: 0.3),
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
           ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.picture_as_pdf_rounded,
-                color: Colors.redAccent.withValues(alpha: 0.8), size: 20),
+            const Icon(LucideIcons.fileText,
+                color: Colors.redAccent, size: 20),
             const SizedBox(width: 8),
             Flexible(
               child: Column(
@@ -752,8 +759,8 @@ class _AiChatbotScreenState extends State<AiChatbotScreen>
                   color: Colors.white.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.close_rounded,
-                    color: Colors.white.withValues(alpha: 0.6), size: 14),
+                child: const Icon(LucideIcons.x,
+                    color: Colors.white, size: 14),
               ),
             ),
           ],
@@ -768,13 +775,13 @@ class _AiChatbotScreenState extends State<AiChatbotScreen>
       children: [
         _buildAttachedPdfChip(),
         Container(
-          padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
           decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.3),
+            color: Theme.of(context).colorScheme.surface,
             border: Border(
               top: _attachedPdf == null
                   ? BorderSide(
-                      color: Colors.white.withValues(alpha: 0.06))
+                      color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.2))
                   : BorderSide.none,
             ),
           ),
@@ -786,23 +793,23 @@ class _AiChatbotScreenState extends State<AiChatbotScreen>
                   borderRadius: BorderRadius.circular(24),
                   onTap: _pickPdfFile,
                   child: Container(
-                    width: 42,
-                    height: 42,
+                    width: 48,
+                    height: 48,
                     decoration: BoxDecoration(
                       color: _attachedPdf != null
-                          ? const Color(0xFF6C63FF).withValues(alpha: 0.2)
-                          : Colors.white.withValues(alpha: 0.06),
-                      borderRadius: BorderRadius.circular(14),
+                          ? Theme.of(context).colorScheme.primary.withOpacity(0.2)
+                          : Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(16),
                       border: Border.all(
                           color: _attachedPdf != null
-                              ? const Color(0xFF6C63FF).withValues(alpha: 0.4)
-                              : Colors.white.withValues(alpha: 0.08)),
+                              ? Theme.of(context).colorScheme.primary.withOpacity(0.4)
+                              : Theme.of(context).colorScheme.outlineVariant.withOpacity(0.2)),
                     ),
                     child: Icon(
                       Icons.add_rounded,
                       color: _attachedPdf != null
-                          ? const Color(0xFF6C63FF)
-                          : Colors.white.withValues(alpha: 0.4),
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.onSurfaceVariant,
                       size: 22,
                     ),
                   ),
@@ -813,26 +820,26 @@ class _AiChatbotScreenState extends State<AiChatbotScreen>
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.06),
-                    borderRadius: BorderRadius.circular(22),
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.4),
+                    borderRadius: BorderRadius.circular(24),
                     border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.08)),
+                        color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.2)),
                   ),
                   child: TextField(
                     controller: _textController,
                     focusNode: _focusNode,
-                    style: const TextStyle(color: Colors.white, fontSize: 15),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 15),
                     maxLines: 4,
                     minLines: 1,
                     textInputAction: TextInputAction.send,
                     onSubmitted: (_) => _generateSummary(),
                     decoration: InputDecoration(
-                      hintText: 'Enter text to summarize…',
+                      hintText: 'Ask a question...',
                       hintStyle: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.25)),
+                          color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5)),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
+                          horizontal: 20, vertical: 14),
                     ),
                   ),
                 ),
@@ -843,27 +850,31 @@ class _AiChatbotScreenState extends State<AiChatbotScreen>
                 color: Colors.transparent,
                 child: InkWell(
                   borderRadius: BorderRadius.circular(24),
-                  onTap: _isGenerating ? null : _generateSummary,
+                  onTap: _isGenerating ? _stopGeneration : _generateSummary,
                   child: Container(
-                    width: 42,
-                    height: 42,
+                    width: 48,
+                    height: 48,
                     decoration: BoxDecoration(
-                      gradient: _isGenerating
-                          ? null
-                          : const LinearGradient(
-                              colors: [Color(0xFF6C63FF), Color(0xFF00C9A7)],
-                            ),
                       color: _isGenerating
-                          ? Colors.white.withValues(alpha: 0.06)
-                          : null,
-                      borderRadius: BorderRadius.circular(14),
+                          ? Theme.of(context).colorScheme.error
+                          : Theme.of(context).colorScheme.primary,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: _isGenerating
+                          ? [
+                              BoxShadow(
+                                color: Theme.of(context).colorScheme.error.withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              )
+                            ]
+                          : [],
                     ),
                     child: Icon(
                       _isGenerating
-                          ? Icons.hourglass_top_rounded
-                          : Icons.auto_awesome,
-                      color: Colors.white,
-                      size: 20,
+                          ? Icons.stop_rounded
+                          : Icons.auto_awesome_rounded,
+                      color: Theme.of(context).colorScheme.onPrimary,
+                      size: _isGenerating ? 24 : 20,
                     ),
                   ),
                 ),

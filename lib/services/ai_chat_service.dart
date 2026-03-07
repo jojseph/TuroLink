@@ -15,32 +15,52 @@ class AiChatService {
   /// Initialize the FlutterGemma system and load the active model.
   /// The model must have been previously installed (e.g., via `FlutterGemma.installModel()`).
   /// Call this once when the chatbot screen is first opened.
-  Future<void> init() async {
+  Future<void> init({String? hfToken}) async {
     if (_isInitialized || _isLoading) return;
     _isLoading = true;
 
     try {
       // Initialize the FlutterGemma system
-      FlutterGemma.initialize();
+      await FlutterGemma.initialize();
 
-      // Check if a model is already installed
-      if (!FlutterGemma.hasActiveModel()) {
+      // Check if our model is already installed - checking both ID and likely filenames
+      final installedModels = await FlutterGemma.listInstalledModels();
+      print('=== INSTALLED MODELS FOUND: $installedModels ===');
+      
+      final isModelInstalled = installedModels.any((m) => 
+        m.toLowerCase().contains('gemma3-1b-it-int4') || 
+        m.toLowerCase().contains('gemma3_1b_it_int4')
+      );
+      
+      if (!isModelInstalled) {
+        print('--- Model likely NOT installed according to list ---');
         _requiresDownload = true;
         _isLoading = false;
         return;
       }
+
+      // Always ensure the Gemma model is active (in case the user had Llama active before)
+      // We pass the token in case the repository gated-check triggers on activation
+      await FlutterGemma.installModel(
+        modelType: ModelType.gemmaIt,
+        fileType: ModelFileType.task,
+      ).fromNetwork(
+        'https://huggingface.co/litert-community/Gemma3-1B-IT/resolve/main/gemma3-1b-it-int4.task',
+        token: hfToken,
+      ).install();
       
       _requiresDownload = false;
 
       // Load the active model
       _model = await FlutterGemma.getActiveModel(
-        maxTokens: 512,
+        maxTokens: 8192,
       );
 
-      // Create a chat session
+      // Create a chat session with recommended Gemma params
       _chat = await _model!.createChat(
-        temperature: 0.7,
-        topK: 40,
+        temperature: 1.0,
+        topK: 64,
+        topP: 0.95,
       );
 
       _isInitialized = true;
@@ -60,7 +80,7 @@ class AiChatService {
   Future<void> downloadAndInstallModel({required String hfToken, required void Function(int) onProgress}) async {
     try {
       // Ensure initialized before installing
-      FlutterGemma.initialize();
+      await FlutterGemma.initialize();
       
       await FlutterGemma.installModel(
             modelType: ModelType.gemmaIt,
@@ -87,14 +107,18 @@ class AiChatService {
     }
 
     try {
-      // Add the user's message to the chat. If it takes more than 30s, it's hung.
-      await _chat!.addQueryChunk(Message.text(text: prompt, isUser: true))
-          .timeout(const Duration(seconds: 30));
+      // Clear previous conversation to free up context window for the new prompt
+      await _chat!.clearHistory();
+
+      // Add the user's message to the chat.
+      // Ensure we explicitly guide the model to respond in English.
+      final fullPrompt = 'Respond strictly in English characters only. $prompt';
+      await _chat!.addQueryChunk(Message.text(text: fullPrompt, isUser: true))
+          .timeout(const Duration(seconds: 60));
 
       // Get the streaming response and extract text tokens.
-      // Timeout if the model doesn't emit any token for 30s.
       await for (final response in _chat!.generateChatResponseAsync()
-          .timeout(const Duration(seconds: 45))) {
+          .timeout(const Duration(seconds: 120))) {
         if (response is TextResponse) {
           yield response.token;
         }
@@ -122,6 +146,11 @@ class AiChatService {
       return response.token;
     }
     return '';
+  }
+
+  /// Stop the ongoing text generation stream immediately.
+  Future<void> stopGeneration() async {
+    await _chat?.stopGeneration();
   }
 
   /// Clear chat history and start a fresh conversation.

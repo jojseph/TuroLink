@@ -6,6 +6,8 @@ import '../models/user_profile.dart';
 import '../models/assignment.dart';
 import '../models/submission.dart';
 import '../models/quiz.dart';
+import '../models/forum_thread.dart';
+import '../models/forum_reply.dart';
 
 class DatabaseService {
   static Database? _database;
@@ -22,7 +24,7 @@ class DatabaseService {
 
     return openDatabase(
       path,
-      version: 5,
+      version: 6,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE user_profile (
@@ -55,6 +57,7 @@ class DatabaseService {
         await _createAssignmentsTable(db);
         await _createSubmissionsTable(db);
         await _createQuizTables(db);
+        await _createForumTables(db);
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
@@ -92,6 +95,15 @@ class DatabaseService {
             await db.execute('ALTER TABLE assignments ADD COLUMN scheduledDate TEXT');
           } catch (_) {}
         }
+        if (oldVersion < 6) {
+          await _createForumTables(db);
+          try {
+            await db.execute('ALTER TABLE attachments ADD COLUMN threadId TEXT');
+          } catch (_) {}
+          try {
+            await db.execute('ALTER TABLE attachments ADD COLUMN replyId TEXT');
+          } catch (_) {}
+        }
       },
     );
   }
@@ -103,6 +115,8 @@ class DatabaseService {
         postId TEXT,
         assignmentId TEXT,
         submissionId TEXT,
+        threadId TEXT,
+        replyId TEXT,
         fileName TEXT NOT NULL,
         fileType TEXT NOT NULL,
         filePath TEXT NOT NULL,
@@ -400,6 +414,107 @@ class DatabaseService {
       where: 'id = ?',
       whereArgs: [id],
     );
+  }
+
+  // ─── Forum Tables ───
+
+  Future<void> _createForumTables(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS forum_threads (
+        id TEXT PRIMARY KEY,
+        classroomId TEXT NOT NULL,
+        authorId TEXT NOT NULL,
+        authorName TEXT NOT NULL,
+        title TEXT NOT NULL,
+        content TEXT NOT NULL,
+        createdAt TEXT NOT NULL,
+        replyCount INTEGER NOT NULL DEFAULT 0,
+        isPinned INTEGER NOT NULL DEFAULT 0
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS forum_replies (
+        id TEXT PRIMARY KEY,
+        threadId TEXT NOT NULL,
+        authorId TEXT NOT NULL,
+        authorName TEXT NOT NULL,
+        content TEXT NOT NULL,
+        createdAt TEXT NOT NULL,
+        isTeacher INTEGER NOT NULL DEFAULT 0
+      )
+    ''');
+  }
+
+  // ─── Forum Threads and Replies ───
+
+  Future<void> saveForumThread(ForumThread thread) async {
+    final db = await database;
+    await db.insert('forum_threads', thread.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace);
+    for (final attachment in thread.attachments) {
+      batchInsertAttachment(db, attachment);
+    }
+  }
+
+  Future<List<ForumThread>> getForumThreadsForClassroom(String classroomId) async {
+    final db = await database;
+    final maps = await db.query(
+      'forum_threads',
+      where: 'classroomId = ?',
+      whereArgs: [classroomId],
+      orderBy: 'isPinned DESC, createdAt DESC',
+    );
+
+    final threads = <ForumThread>[];
+    for (final m in maps) {
+      final threadId = m['id'] as String;
+      final attachments = await _getAttachmentsForEntity('threadId', threadId);
+      threads.add(ForumThread.fromMap(m, attachments: attachments));
+    }
+    return threads;
+  }
+
+  Future<void> saveForumReply(ForumReply reply) async {
+    final db = await database;
+    await db.insert('forum_replies', reply.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace);
+    
+    // Increment reply count in thread
+    await db.rawUpdate(
+        'UPDATE forum_threads SET replyCount = replyCount + 1 WHERE id = ?',
+        [reply.threadId]);
+
+    for (final attachment in reply.attachments) {
+      batchInsertAttachment(db, attachment);
+    }
+  }
+
+  Future<List<ForumReply>> getForumRepliesForThread(String threadId) async {
+    final db = await database;
+    final maps = await db.query(
+      'forum_replies',
+      where: 'threadId = ?',
+      whereArgs: [threadId],
+      orderBy: 'createdAt ASC',
+    );
+
+    final replies = <ForumReply>[];
+    for (final m in maps) {
+      final replyId = m['id'] as String;
+      final attachments = await _getAttachmentsForEntity('replyId', replyId);
+      replies.add(ForumReply.fromMap(m, attachments: attachments));
+    }
+    return replies;
+  }
+
+  Future<List<Attachment>> _getAttachmentsForEntity(String column, String entityId) async {
+    final db = await database;
+    final maps = await db.query(
+      'attachments',
+      where: '$column = ?',
+      whereArgs: [entityId],
+    );
+    return maps.map((m) => Attachment.fromMap(m)).toList();
   }
 
   // ─── Attachments ───

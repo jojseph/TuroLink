@@ -5,10 +5,13 @@ import '../providers/profile_provider.dart';
 import '../services/database_service.dart';
 import 'create_classroom_screen.dart';
 import 'p2p_hub_screen.dart';
-import 'teacher_dashboard_screen.dart';
 import 'student_dashboard_screen.dart';
 import 'home_screen.dart';
 import 'quiz_bank_screen.dart';
+import 'teacher_dashboard_screen.dart';
+import 'package:lucide_icons/lucide_icons.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -93,20 +96,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (profile == null) return const SizedBox();
 
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0F0C29),
-              Color(0xFF302B63),
-              Color(0xFF24243E),
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
+      body: SafeArea(
+        child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ─── Header ───
@@ -151,11 +142,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         children: [
                           Text(
                             'Hi, ${profile.displayName}!',
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
+                            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                           ),
                           const SizedBox(height: 2),
                           Row(
@@ -209,16 +198,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               ),
                             );
                           },
-                          icon: const Icon(Icons.quiz_rounded,
+                          icon: const Icon(LucideIcons.fileQuestion,
                               color: Color(0xFFFF6B6B), size: 20),
                           tooltip: 'Quiz Bank',
                         ),
                       ),
                     const SizedBox(width: 4),
-                    IconButton(
+                     IconButton(
                       onPressed: _logout,
-                      icon: const Icon(Icons.logout_rounded,
-                          color: Colors.white54),
+                      icon: const Icon(LucideIcons.logOut,
+                          color: Colors.grey),
                       tooltip: 'Switch Account',
                     ),
                   ],
@@ -234,7 +223,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: Colors.white.withValues(alpha: 0.4),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     letterSpacing: 1.5,
                   ),
                 ),
@@ -256,8 +245,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   horizontal: 24, vertical: 8),
                               itemCount: _classrooms.length,
                               itemBuilder: (context, index) {
-                                return _buildClassroomCard(
-                                    _classrooms[index]);
+                                return _buildClassroomCard(_classrooms[index])
+                                    .animate()
+                                    .fadeIn(delay: (index * 50).ms, duration: 400.ms)
+                                    .slideX(begin: 0.05, end: 0, curve: Curves.easeOutCubic);
                               },
                             ),
                           ),
@@ -265,7 +256,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ],
           ),
         ),
-      ),
 
       // ─── FAB ───
       floatingActionButton: FloatingActionButton.extended(
@@ -284,10 +274,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
           }
           _loadClassrooms(); // Refresh after returning
         },
-        backgroundColor: const Color(0xFF6C63FF),
+        backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Colors.white,
         icon: Icon(
-          profile.isTeacher ? Icons.add_rounded : Icons.radar_rounded,
+          profile.isTeacher ? LucideIcons.plus : LucideIcons.radio,
         ),
         label: Text(
           profile.isTeacher ? 'Create Class' : 'Scan Nearby',
@@ -304,21 +294,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              isTeacher ? Icons.school_outlined : Icons.search_rounded,
+             Icon(
+              isTeacher ? LucideIcons.graduationCap : LucideIcons.search,
               size: 80,
-              color: Colors.white.withValues(alpha: 0.15),
+              color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
             ),
             const SizedBox(height: 24),
             Text(
               isTeacher
                   ? 'No classrooms yet'
                   : 'No classes joined yet',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Colors.white.withValues(alpha: 0.5),
-              ),
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
             ),
             const SizedBox(height: 8),
             Text(
@@ -326,10 +314,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ? 'Tap "Create Class" to get started'
                   : 'Tap "Scan Nearby" to find a classroom',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.white.withValues(alpha: 0.3),
-              ),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
             ),
           ],
         ),
@@ -343,6 +330,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         Provider.of<ProfileProvider>(context, listen: false).profile!;
     final isOwner = profile.isTeacher;
 
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Material(
@@ -353,43 +342,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.white.withValues(alpha: 0.08),
-                  Colors.white.withValues(alpha: 0.03),
-                ],
-              ),
+              color: colorScheme.surface,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: (isOwner
-                        ? const Color(0xFF6C63FF)
-                        : const Color(0xFF00C9A7))
-                    .withValues(alpha: 0.3),
+                color: colorScheme.outlineVariant.withOpacity(0.5),
               ),
             ),
             child: Row(
               children: [
-                // Icon
+                // Icon Container
                 Container(
                   width: 52,
                   height: 52,
                   decoration: BoxDecoration(
-                    color: (isOwner
-                            ? const Color(0xFF6C63FF)
-                            : const Color(0xFF00C9A7))
-                        .withValues(alpha: 0.2),
+                    color: isOwner
+                        ? colorScheme.primaryContainer
+                        : colorScheme.secondaryContainer,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Icon(
-                    isOwner
-                        ? Icons.cast_for_education_rounded
-                        : Icons.menu_book_rounded,
+                    isOwner ? LucideIcons.graduationCap : LucideIcons.bookOpen,
                     color: isOwner
-                        ? const Color(0xFF6C63FF)
-                        : const Color(0xFF00C9A7),
-                    size: 26,
+                        ? colorScheme.onPrimaryContainer
+                        : colorScheme.onSecondaryContainer,
+                    size: 24,
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -400,41 +376,43 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     children: [
                       Text(
                         classroom.name,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 6),
                       Row(
                         children: [
-                          Icon(
-                            Icons.article_outlined,
+                           Icon(
+                            LucideIcons.fileText,
                             size: 14,
-                            color: Colors.white.withValues(alpha: 0.4),
+                            color: colorScheme.onSurfaceVariant,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             '$postCount post${postCount == 1 ? '' : 's'}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.white.withValues(alpha: 0.4),
-                            ),
+                            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
                           ),
                           const SizedBox(width: 12),
                           if (!isOwner) ...[
-                            Icon(
-                              Icons.person_outline,
+                             Icon(
+                              LucideIcons.user,
                               size: 14,
-                              color: Colors.white.withValues(alpha: 0.4),
+                              color: colorScheme.onSurfaceVariant,
                             ),
                             const SizedBox(width: 4),
-                            Text(
-                              classroom.teacherName,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.white.withValues(alpha: 0.4),
+                            Expanded(
+                              child: Text(
+                                classroom.teacherName,
+                                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                      color: colorScheme.onSurfaceVariant,
+                                    ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
@@ -443,9 +421,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ],
                   ),
                 ),
-                const Icon(
-                  Icons.chevron_right_rounded,
-                  color: Colors.white30,
+                Icon(
+                  Icons.chevron_right,
+                  color: colorScheme.onSurfaceVariant,
                 ),
               ],
             ),

@@ -7,6 +7,8 @@ import '../models/submission.dart';
 import '../services/database_service.dart';
 import '../providers/p2p_provider.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+
 
 class TeacherAssignmentDetailScreen extends StatefulWidget {
   final Assignment assignment;
@@ -59,21 +61,21 @@ class _TeacherAssignmentDetailScreenState extends State<TeacherAssignmentDetailS
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF2A2A40),
-        title: Text('Grade ${submission.studentName}', style: const TextStyle(color: Colors.white)),
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
+        title: Text('Grade ${submission.studentName}', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: gradeController,
               keyboardType: TextInputType.number,
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
               decoration: InputDecoration(
                 labelText: 'Score (out of ${widget.assignment.maxScore ?? 100})',
-                labelStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5)),
                 filled: true,
-                fillColor: const Color(0xFF1E1E2E),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+                fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
               ),
             ),
           ],
@@ -81,10 +83,10 @@ class _TeacherAssignmentDetailScreenState extends State<TeacherAssignmentDetailS
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
+            child: Text('Cancel', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF6C63FF)),
+            style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.primary),
             onPressed: () async {
               final score = double.tryParse(gradeController.text);
               if (score != null) {
@@ -99,7 +101,7 @@ class _TeacherAssignmentDetailScreenState extends State<TeacherAssignmentDetailS
                 }
               }
             },
-            child: const Text('Grade & Return', style: TextStyle(color: Colors.white)),
+            child: Text('Grade & Return', style: TextStyle(color: Theme.of(context).colorScheme.onPrimary)),
           ),
         ],
       ),
@@ -119,12 +121,12 @@ class _TeacherAssignmentDetailScreenState extends State<TeacherAssignmentDetailS
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0C29),
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-        title: const Text('Assignment Detail', style: TextStyle(color: Colors.white)),
+        title: Text('Assignment Detail', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurface),
       ),
       body: Consumer<P2PProvider>(
         builder: (context, p2p, _) {
@@ -139,9 +141,9 @@ class _TeacherAssignmentDetailScreenState extends State<TeacherAssignmentDetailS
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(widget.assignment.title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white)),
+                    Text(widget.assignment.title, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
                     const SizedBox(height: 8),
-                    Text('${submissions.length} Submissions', style: TextStyle(color: Colors.white.withOpacity(0.7))),
+                    Text('${submissions.length} Submissions', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.7))),
                   ],
                 ),
               ),
@@ -150,16 +152,16 @@ class _TeacherAssignmentDetailScreenState extends State<TeacherAssignmentDetailS
               // Submissions List
               Expanded(
                 child: submissions.isEmpty
-                    ? Center(child: Text('No submissions yet.', style: TextStyle(color: Colors.white.withOpacity(0.5))))
+                    ? Center(child: Text('No submissions yet.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5))))
                     : ListView.builder(
                         itemCount: submissions.length,
                         padding: const EdgeInsets.all(16),
                         itemBuilder: (context, index) {
                           final sub = submissions[index];
                           return Card(
-                            color: const Color(0xFF1E1E2E),
+                            color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
                             margin: const EdgeInsets.only(bottom: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                             child: Padding(
                               padding: const EdgeInsets.all(16),
                               child: Column(
@@ -168,28 +170,28 @@ class _TeacherAssignmentDetailScreenState extends State<TeacherAssignmentDetailS
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Text(sub.studentName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                                      Text(sub.studentName, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
                                       if (sub.isReturned)
                                         Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                          decoration: BoxDecoration(color: Colors.green.withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
-                                          child: Text('${sub.score} / ${widget.assignment.maxScore ?? 100}', style: const TextStyle(color: Colors.greenAccent, fontSize: 12, fontWeight: FontWeight.bold)),
+                                          decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary.withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
+                                          child: Text('${sub.score} / ${widget.assignment.maxScore ?? 100}', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: 12, fontWeight: FontWeight.bold)),
                                         )
                                       else
-                                        ElevatedButton(
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: const Color(0xFF6C63FF),
-                                            visualDensity: VisualDensity.compact,
-                                          ),
+                                          ElevatedButton(
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Theme.of(context).colorScheme.primary,
+                                              visualDensity: VisualDensity.compact,
+                                            ),
                                           onPressed: () => _showGradeDialog(sub),
-                                          child: const Text('Grade', style: TextStyle(color: Colors.white)),
+                                          child: Text('Grade', style: TextStyle(color: Theme.of(context).colorScheme.onPrimary)),
                                         )
                                     ],
                                   ),
-                                  Text('Turned in ${DateFormat('MMM d, h:mm a').format(sub.submittedAt)}', style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12)),
+                                  Text('Turned in ${DateFormat('MMM d, h:mm a').format(sub.submittedAt)}', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5), fontSize: 12)),
                                   const SizedBox(height: 12),
                                   if (sub.content.isNotEmpty)
-                                    Text(sub.content, style: const TextStyle(color: Colors.white70, fontSize: 14)),
+                                    Text(sub.content, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14)),
                                   if (sub.attachments.isNotEmpty) ...[
                                     const SizedBox(height: 12),
                                     Wrap(
@@ -197,10 +199,10 @@ class _TeacherAssignmentDetailScreenState extends State<TeacherAssignmentDetailS
                                       runSpacing: 8,
                                       children: sub.attachments.map((a) {
                                         return ActionChip(
-                                          backgroundColor: Colors.white.withOpacity(0.1),
-                                          labelStyle: const TextStyle(color: Colors.white70, fontSize: 12),
+                                          backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                                          labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
                                           label: Text(a.fileName),
-                                          avatar: const Icon(Icons.attach_file, size: 14, color: Colors.white70),
+                                          avatar: Icon(Icons.attach_file_rounded, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
                                           onPressed: () => _openFile(a.filePath),
                                         );
                                       }).toList(),
@@ -209,7 +211,7 @@ class _TeacherAssignmentDetailScreenState extends State<TeacherAssignmentDetailS
                                 ],
                               ),
                             ),
-                          );
+                          ).animate().fadeIn(duration: 400.ms, delay: (index * 100).ms).slideY(begin: 0.1, end: 0, curve: Curves.easeOutCubic);
                         },
                       ),
               ),

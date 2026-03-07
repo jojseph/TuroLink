@@ -6,6 +6,7 @@ import 'providers/profile_provider.dart';
 import 'providers/sharing_provider.dart';
 import 'screens/home_screen.dart';
 import 'screens/dashboard_screen.dart';
+import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,15 +38,13 @@ class P2PClassroomApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => SharingProvider()),
       ],
       child: MaterialApp(
-        title: 'P2P Classroom',
+        title: 'TuroLink',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          useMaterial3: true,
-          brightness: Brightness.dark,
-          colorSchemeSeed: const Color(0xFF6C63FF),
-          scaffoldBackgroundColor: const Color(0xFF0F0C29),
-          fontFamily: 'Roboto',
-        ),
+        theme: AppTheme.lightTheme,
+        locale: const Locale('en', 'US'),
+        supportedLocales: const [
+          Locale('en', 'US'),
+        ],
         // If profile exists, go straight to Dashboard; otherwise HomeScreen
         home: profileProvider.hasProfile
             ? const DashboardScreen()

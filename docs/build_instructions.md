@@ -20,7 +20,7 @@ If you need to build the app again in the future or find where things are stored
 To build a fresh release APK, open your terminal (make sure you are inside the `TuroLink` project folder) and run the following command using the absolute path to your Flutter batch file:
 
 ```powershell
-C:\Users\joseph\.gemini\antigravity\scratch\flutter_setup\flutter\bin\flutter.bat build apk --release
+C:\Users\joseph\.gemini\antigravity\scratch\flutter_setup\flutter\bin\flutter.bat build apk --release --no-tree-shake-icons
 ```
 
 ## ⏳ Why the Build Process Takes Long

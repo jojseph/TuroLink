@@ -1,8 +1,10 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:open_filex/open_filex.dart';
 import '../models/attachment.dart';
 import '../models/classroom.dart';
 import '../models/post.dart';
@@ -10,12 +12,14 @@ import '../models/assignment.dart';
 import '../providers/p2p_provider.dart';
 import '../providers/profile_provider.dart';
 import '../services/database_service.dart';
-import '../services/database_service.dart';
 import '../services/permission_service.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'dart:convert';
 import 'teacher_assignment_detail_screen.dart';
+import 'forum/forum_feed_view.dart';
 import 'ai_chatbot_screen.dart';
+import 'package:lucide_icons/lucide_icons.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+
 
 class TeacherDashboardScreen extends StatefulWidget {
   final Classroom classroom;
@@ -39,6 +43,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
   double? _selectedMaxScore;
   DateTime? _selectedScheduledDate;
 
+  // This DatabaseService is not defined in the provided code, assuming it exists elsewhere.
+  // For the purpose of this edit, it's left as is.
   final DatabaseService _dbService = DatabaseService();
   List<Post> _localPosts = [];
   List<Assignment> _localAssignments = [];
@@ -52,7 +58,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _tabController.addListener(() {
       setState(() {});
     });
@@ -72,6 +78,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
 
   void _goLive() async {
     // Request all P2P permissions before starting
+    // PermissionService is not defined in the provided code, assuming it exists elsewhere.
     final granted = await PermissionService.requestP2PPermissions();
     if (!granted) {
       if (mounted) {
@@ -253,13 +260,13 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1A1A2E),
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
-        title: const Text(
+        title: Text(
           'Classroom QR Code',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
           textAlign: TextAlign.center,
         ),
         content: Column(
@@ -271,11 +278,34 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: QrImageView(
-                data: qrData,
-                version: QrVersions.auto,
-                size: 200.0,
-                backgroundColor: Colors.white,
+              // QrImageView is not defined in the provided code, assuming it exists elsewhere.
+              child: SizedBox(
+                width: 220,
+                height: 220,
+                child: QrImageView(
+                  data: qrData,
+                  version: QrVersions.auto,
+                  size: 220.0,
+                  padding: EdgeInsets.zero,
+                  backgroundColor: Colors.white,
+                  eyeStyle: const QrEyeStyle(
+                    eyeShape: QrEyeShape.square,
+                    color: Color(0xFF000000),
+                  ),
+                  dataModuleStyle: const QrDataModuleStyle(
+                    dataModuleShape: QrDataModuleShape.square,
+                    color: Color(0xFF000000),
+                  ),
+                  errorStateBuilder: (ctx, err) {
+                    return Center(
+                      child: Text(
+                        'Error generating QR:\n${err.toString()}',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: Colors.red, fontSize: 12),
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -283,7 +313,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
               'Students can scan this code\nto join instantly.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.6),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontSize: 13,
               ),
             ),
@@ -292,8 +322,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Close',
-                style: TextStyle(color: Color(0xFF6C63FF))),
+            child: Text('Close',
+                style: TextStyle(color: Theme.of(context).colorScheme.primary)),
           ),
         ],
       ),
@@ -352,9 +382,9 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
             padding: EdgeInsets.only(
               bottom: viewInsets.bottom,
             ),
-            decoration: const BoxDecoration(
-              color: Color(0xFF2A2A40),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHigh,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             ),
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
@@ -367,15 +397,15 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
                     children: [
                       Text(
                         isAssignment ? 'New Assignment' : 'New Announcement',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.close_rounded,
-                            color: Colors.white54),
+                        icon: const Icon(LucideIcons.chevronLeft,
+                            color: Colors.black),
                         onPressed: () {
                           _selectedFiles.clear();
                           _selectedScheduledDate = null;
@@ -388,13 +418,13 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
                   if (isAssignment) ...[
                     TextField(
                       controller: _assignmentTitleController,
-                      style: const TextStyle(color: Colors.white),
+                      style: const TextStyle(color: Colors.black),
                       decoration: InputDecoration(
                         hintText: 'Title',
                         hintStyle: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.3)),
+                            color: Theme.of(context).colorScheme.onSurfaceVariant),
                         filled: true,
-                        fillColor: const Color(0xFF1E1E2E),
+                        fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none,
@@ -407,13 +437,13 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
                   TextField(
                     controller: isAssignment ? _assignmentDescController : _postController,
                     maxLines: isAssignment ? 4 : 5,
-                    style: const TextStyle(color: Colors.white),
+                    style: const TextStyle(color: Colors.black),
                     decoration: InputDecoration(
                       hintText: isAssignment ? 'Instructions (optional)' : 'What do you want to share?',
                       hintStyle: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.3)),
+                          color: Theme.of(context).colorScheme.onSurfaceVariant),
                       filled: true,
-                      fillColor: const Color(0xFF1E1E2E),
+                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
@@ -443,16 +473,16 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
                             child: Container(
                               padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF1E1E2E),
+                                color: Theme.of(context).colorScheme.surfaceContainerHighest,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Row(
                                 children: [
-                                  Icon(Icons.calendar_today, color: Colors.white.withValues(alpha: 0.5), size: 18),
+                                  Icon(Icons.calendar_today, color: Theme.of(context).colorScheme.onSurfaceVariant, size: 18),
                                   const SizedBox(width: 8),
                                   Text(
                                     _selectedDueDate == null ? 'Due Date' : DateFormat('MMM d, y').format(_selectedDueDate!),
-                                    style: TextStyle(color: _selectedDueDate == null ? Colors.white54 : Colors.white),
+                                    style: TextStyle(color: _selectedDueDate == null ? Theme.of(context).colorScheme.onSurfaceVariant : Theme.of(context).colorScheme.onSurface),
                                   )
                                 ],
                               ),
@@ -463,13 +493,13 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
                         Expanded(
                           child: TextField(
                             keyboardType: TextInputType.number,
-                            style: const TextStyle(color: Colors.white),
+                            style: const TextStyle(color: Colors.black),
                             onChanged: (val) => _selectedMaxScore = double.tryParse(val),
                             decoration: InputDecoration(
                               hintText: 'Max Score (100)',
-                              hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
+                              hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                               filled: true,
-                              fillColor: const Color(0xFF1E1E2E),
+                              fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide.none,
@@ -484,8 +514,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
                   ],
 
                   if (_selectedFiles.isNotEmpty) ...[
-                    const Text('Attachments',
-                        style: TextStyle(color: Colors.white70)),
+                    Text('Attachments',
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                     const SizedBox(height: 8),
                     Wrap(
                       spacing: 8,
@@ -508,7 +538,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
                   Row(
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.attach_file, color: Color(0xFF00C9A7)),
+                        icon: Icon(Icons.attach_file, color: Theme.of(context).colorScheme.primary),
                         onPressed: () async {
                           final result = await FilePicker.platform.pickFiles(allowMultiple: true);
                           if (result != null) {
@@ -519,7 +549,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
                         },
                       ),
                       IconButton(
-                        icon: const Icon(Icons.schedule_rounded, color: Colors.orange),
+                        icon: const Icon(Icons.schedule, color: Colors.orange),
                         tooltip: 'Schedule Post/Assignment',
                         onPressed: () async {
                           final date = await showDatePicker(
@@ -549,7 +579,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
                             padding: const EdgeInsets.symmetric(horizontal: 8.0),
                             child: Text(
                               'Sch: ${DateFormat('MMM d, h:mm a').format(_selectedScheduledDate!)}',
-                              style: const TextStyle(color: Colors.orange, fontSize: 12),
+                              style: TextStyle(color: Theme.of(context).colorScheme.tertiary, fontSize: 12),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -567,8 +597,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
                                 }
                               },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF6C63FF),
-                          foregroundColor: Colors.white,
+                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          foregroundColor: Theme.of(context).colorScheme.onPrimary,
                           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
@@ -625,19 +655,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
   }
 
   Widget _buildClassroomView(P2PProvider p2p, List<Post> posts) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF0F0C29),
-            Color(0xFF302B63),
-            Color(0xFF24243E),
-          ],
-        ),
-      ),
-      child: SafeArea(
+    return SafeArea(
         bottom: false,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -651,8 +669,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
                   Row(
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.arrow_back_ios,
-                            color: Colors.white70),
+                        icon: const Icon(LucideIcons.chevronLeft,
+                            color: Colors.black),
                         onPressed: () {
                           if (_isLive) p2p.stopAll();
                           Navigator.pop(context);
@@ -661,18 +679,16 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
                       Expanded(
                         child: Text(
                           widget.classroom.name,
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
+                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
                         ),
                       ),
                       if (_isLive)
                         IconButton(
-                          icon: const Icon(
-                            Icons.qr_code_rounded,
-                            color: Color(0xFF00C9A7),
+                          icon: Icon(
+                            LucideIcons.qrCode,
+                            color: Theme.of(context).colorScheme.primary,
                             size: 28,
                           ),
                           onPressed: _showQrCode,
@@ -685,22 +701,22 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
                   // Info chips row
                   Row(
                     children: [
-                      _InfoChip(
-                        icon: Icons.key_rounded,
+                       _InfoChip(
+                        icon: LucideIcons.key,
                         label: widget.classroom.password,
-                        color: const Color(0xFFFF6B6B),
+                        color: Theme.of(context).colorScheme.error,
                       ),
                       const SizedBox(width: 10),
                       if (_isLive)
                         _InfoChip(
-                          icon: Icons.people_rounded,
+                          icon: LucideIcons.users,
                           label:
                               '${p2p.connectedStudents.where((s) => s.isAuthenticated).length} students',
                           color: const Color(0xFF4ECB71),
                         ),
                       const SizedBox(width: 10),
                       _InfoChip(
-                        icon: Icons.article_outlined,
+                        icon: LucideIcons.fileText,
                         label: '${posts.length} posts',
                         color: const Color(0xFF6C63FF),
                       ),
@@ -711,27 +727,31 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
                   // Go Live / Go Offline button
                   SizedBox(
                     width: double.infinity,
-                    height: 44,
+                    height: 54,
                     child: ElevatedButton.icon(
                       onPressed: _isLive ? _goOffline : _goLive,
                       icon: Icon(
                         _isLive
-                            ? Icons.stop_rounded
-                            : Icons.wifi_tethering_rounded,
+                            ? LucideIcons.stopCircle
+                            : LucideIcons.radio,
+                        color: _isLive ? Colors.black : Colors.white,
                       ),
                       label: Text(
                         _isLive
                             ? 'Stop Broadcasting'
                             : 'Go Live (Start P2P)',
                         style: const TextStyle(
+                          fontSize: 16, // Added larger font size
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: _isLive
-                            ? Colors.red.shade700
-                            : const Color(0xFF00C9A7),
-                        foregroundColor: Colors.white,
+                            ? Theme.of(context).colorScheme.error
+                            : Theme.of(context).colorScheme.primary,
+                        foregroundColor: _isLive
+                            ? Theme.of(context).colorScheme.onError
+                            : Theme.of(context).colorScheme.onPrimary,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -746,8 +766,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
                       padding: const EdgeInsets.symmetric(
                           horizontal: 14, vertical: 10),
                       decoration: BoxDecoration(
-                        color:
-                            Colors.white.withValues(alpha: 0.04),
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Row(
@@ -765,8 +784,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
                             child: Text(
                               p2p.statusMessage,
                               style: TextStyle(
-                                color: Colors.white
-                                    .withValues(alpha: 0.5),
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
                                 fontSize: 12,
                               ),
                             ),
@@ -777,28 +795,21 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
                   ],
                   const SizedBox(height: 16),
 
-                  // Tab Bar
                   TabBar(
                     controller: _tabController,
-                    indicatorColor: const Color(0xFF00C9A7),
-                    labelColor: Colors.white,
-                    unselectedLabelColor: Colors.white54,
+                    indicatorColor: Theme.of(context).colorScheme.primary,
+                    labelColor: Theme.of(context).colorScheme.primary,
+                    unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant,
+                    labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                    unselectedLabelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                    labelPadding: const EdgeInsets.symmetric(horizontal: 4),
                     tabs: const [
                       Tab(text: 'Announcements'),
                       Tab(text: 'Assignments'),
+                      Tab(text: 'Forum'),
                     ],
                   ),
                 ],
-              ),
-            ),
-
-            // Divider
-            Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 20),
-              child: Divider(
-                height: 1,
-                color: Colors.white.withValues(alpha: 0.08),
               ),
             ),
 
@@ -812,13 +823,16 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
                   
                   // Assignments view
                   _buildAssignmentsView(_getMergedAssignments(p2p)),
+                  
+                  // Forum view
+                  // ForumFeedView is not defined in the provided code, assuming it exists elsewhere.
+                  ForumFeedView(classroom: widget.classroom, isTeacher: true),
                 ],
               ),
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 
   @override
@@ -832,16 +846,17 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
             index: _selectedNavIndex,
             children: [
               _buildClassroomView(p2p, posts),
+              // AiChatbotScreen is not defined in the provided code, assuming it exists elsewhere.
               const AiChatbotScreen(),
             ],
           ),
 
-          // FAB only on Classroom tab
-          floatingActionButton: _selectedNavIndex == 0
+          // FAB only on Classroom tab and not on Forum tab (Forum has its own FAB)
+          floatingActionButton: _selectedNavIndex == 0 && _tabController.index != 2
               ? FloatingActionButton.extended(
                   onPressed: _tabController.index == 0 ? _showPostDialog : _showAssignmentDialog,
-                  backgroundColor: const Color(0xFF6C63FF),
-                  icon: const Icon(Icons.add_rounded, color: Colors.white),
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  icon: const Icon(LucideIcons.plus, color: Colors.white),
                   label: Text(
                      _tabController.index == 0 ? 'New Post' : 'New Assignment',
                      style: const TextStyle(color: Colors.white),
@@ -851,33 +866,28 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
 
           // Bottom Navigation Bar
           bottomNavigationBar: Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFF1A1A2E),
-              border: Border(
-                top: BorderSide(
-                  color: Colors.white.withValues(alpha: 0.06),
-                ),
-              ),
+            decoration: const BoxDecoration(
+              color: Color(0xFF1A1A2E),
             ),
             child: BottomNavigationBar(
               currentIndex: _selectedNavIndex,
               onTap: (index) => setState(() => _selectedNavIndex = index),
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              selectedItemColor: const Color(0xFF6C63FF),
-              unselectedItemColor: Colors.white38,
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              elevation: 4,
+              selectedItemColor: Theme.of(context).colorScheme.primary,
+              unselectedItemColor: Theme.of(context).colorScheme.onSurfaceVariant,
               selectedFontSize: 12,
               unselectedFontSize: 12,
               type: BottomNavigationBarType.fixed,
               items: const [
                 BottomNavigationBarItem(
-                  icon: Icon(Icons.school_rounded),
-                  activeIcon: Icon(Icons.school_rounded),
+                  icon: Icon(LucideIcons.graduationCap),
+                  activeIcon: Icon(LucideIcons.graduationCap),
                   label: 'Classroom',
                 ),
                 BottomNavigationBarItem(
-                  icon: Icon(Icons.auto_awesome_outlined),
-                  activeIcon: Icon(Icons.auto_awesome),
+                  icon: Icon(LucideIcons.sparkles),
+                  activeIcon: Icon(LucideIcons.sparkles),
                   label: 'AI Assistant',
                 ),
               ],
@@ -895,16 +905,16 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.post_add_rounded,
+              LucideIcons.filePlus,
               size: 64,
-              color: Colors.white.withValues(alpha: 0.15),
+              color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.3),
             ),
             const SizedBox(height: 16),
             Text(
               'No posts yet.\nTap + to create your first announcement.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.35),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
           ],
@@ -920,7 +930,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
         return _PostCard(
           post: post,
           formatTime: _formatTime,
-        );
+        ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.05, end: 0, curve: Curves.easeOutCubic);
       },
     );
   }
@@ -932,16 +942,16 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.assignment_rounded,
+              LucideIcons.clipboardList,
               size: 64,
-              color: Colors.white.withValues(alpha: 0.15),
+              color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.3),
             ),
             const SizedBox(height: 16),
             Text(
               'No assignments yet.\nTap + to create your first assignment.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.35),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
           ],
@@ -958,6 +968,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
           assignment: assignment,
           formatTime: _formatTime,
           onTap: () {
+            // TeacherAssignmentDetailScreen is not defined in the provided code, assuming it exists elsewhere.
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -967,7 +978,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
               ),
             );
           },
-        );
+        ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.05, end: 0, curve: Curves.easeOutCubic);
       },
     );
   }
@@ -1000,28 +1011,58 @@ class _PostCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.06),
-          borderRadius: BorderRadius.circular(16),
+          color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: Colors.white.withValues(alpha: 0.06),
+            color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.2),
           ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Teacher info row
+            Row(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.school,
+                    size: 16,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Teacher',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
             if (post.scheduledDate != null && post.scheduledDate!.isAfter(DateTime.now()))
               Container(
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withValues(alpha: 0.15),
+                  color: Colors.orange.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                  border: Border.all(color: Colors.orange.withOpacity(0.3)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.schedule_rounded, size: 14, color: Colors.orange),
+                    const Icon(Icons.schedule, size: 14, color: Colors.orange),
                     const SizedBox(width: 6),
                     Text(
                       'Scheduled for ${DateFormat('MMM d, y, h:mm a').format(post.scheduledDate!)}',
@@ -1033,8 +1074,8 @@ class _PostCard extends StatelessWidget {
             if (post.content.isNotEmpty) ...[
               Text(
                 post.content,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontSize: 15,
                   height: 1.5,
                 ),
@@ -1052,6 +1093,7 @@ class _PostCard extends StatelessWidget {
                     fileName: attachment.fileName,
                     fileType: attachment.fileType,
                     fileSize: attachment.fileSizeFormatted,
+                    filePath: attachment.filePath,
                   );
                 }).toList(),
               ),
@@ -1060,7 +1102,7 @@ class _PostCard extends StatelessWidget {
             Text(
               formatTime(post.createdAt),
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.3),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontSize: 11,
               ),
             ),
@@ -1077,35 +1119,37 @@ class _FileAttachmentBadge extends StatelessWidget {
   final String fileName;
   final String fileType;
   final String fileSize;
+  final String filePath;
 
   const _FileAttachmentBadge({
     required this.fileName,
     required this.fileType,
     required this.fileSize,
+    required this.filePath,
   });
 
   IconData _getIcon() {
     switch (fileType.toLowerCase()) {
       case 'pdf':
-        return Icons.picture_as_pdf_rounded;
+        return Icons.picture_as_pdf;
       case 'jpg':
       case 'jpeg':
       case 'png':
-        return Icons.image_rounded;
+        return Icons.image;
       case 'mp3':
-        return Icons.audiotrack_rounded;
+        return Icons.audiotrack;
       case 'mp4':
-        return Icons.videocam_rounded;
+        return Icons.videocam;
       case 'csv':
-        return Icons.table_chart_rounded;
+        return Icons.table_chart;
       case 'docx':
       case 'doc':
-        return Icons.description_rounded;
+        return Icons.description;
       case 'ppt':
       case 'pptx':
-        return Icons.slideshow_rounded;
+        return Icons.slideshow;
       default:
-        return Icons.insert_drive_file_rounded;
+        return Icons.insert_drive_file;
     }
   }
 
@@ -1137,39 +1181,52 @@ class _FileAttachmentBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = _getColor();
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withValues(alpha: 0.25)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(_getIcon(), size: 16, color: color),
-          const SizedBox(width: 8),
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 140),
-            child: Text(
-              fileName,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: color,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
+    return GestureDetector(
+      onTap: () async {
+        final result = await OpenFilex.open(filePath);
+        if (result.type != ResultType.done && context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Could not open file: ${result.message}'),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.12),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: color.withOpacity(0.25)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(_getIcon(), size: 16, color: color),
+            const SizedBox(width: 8),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 140),
+              child: Text(
+                fileName,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            fileSize,
-            style: TextStyle(
-              color: color.withValues(alpha: 0.6),
-              fontSize: 10,
+            const SizedBox(width: 6),
+            Text(
+              fileSize,
+              style: TextStyle(
+                color: color.withOpacity(0.6),
+                fontSize: 10,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1202,9 +1259,9 @@ class _AttachmentChip extends StatelessWidget {
       width: 150,
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.08),
+        color: Colors.white.withOpacity(0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1212,7 +1269,7 @@ class _AttachmentChip extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.insert_drive_file_rounded,
+              const Icon(Icons.insert_drive_file,
                   size: 14, color: Color(0xFF6C63FF)),
               const SizedBox(width: 6),
               Expanded(
@@ -1228,7 +1285,7 @@ class _AttachmentChip extends StatelessWidget {
               ),
               GestureDetector(
                 onTap: onRemove,
-                child: const Icon(Icons.close_rounded,
+                child: const Icon(Icons.close,
                     size: 14, color: Colors.white38),
               ),
             ],
@@ -1237,7 +1294,7 @@ class _AttachmentChip extends StatelessWidget {
           Text(
             _formattedSize,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.3),
+              color: Colors.white.withOpacity(0.3),
               fontSize: 10,
             ),
           ),
@@ -1265,9 +1322,9 @@ class _InfoChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
+        color: color.withOpacity(0.12),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+        border: Border.all(color: color.withOpacity(0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1303,40 +1360,66 @@ class _AssignmentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        decoration: BoxDecoration(
-          color: const Color(0xFF2A2A40),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.2),
             ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header
+              // Teacher info & Status row (same as post)
+              Row(
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      Icons.school,
+                      size: 16,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Teacher',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
               if (assignment.scheduledDate != null && assignment.scheduledDate!.isAfter(DateTime.now()))
                 Container(
                   margin: const EdgeInsets.only(bottom: 12),
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.orange.withValues(alpha: 0.15),
+                    color: Colors.orange.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                    border: Border.all(color: Colors.orange.withOpacity(0.3)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.schedule_rounded, size: 14, color: Colors.orange),
+                      const Icon(Icons.schedule, size: 14, color: Colors.orange),
                       const SizedBox(width: 6),
                       Text(
                         'Scheduled for ${DateFormat('MMM d, y, h:mm a').format(assignment.scheduledDate!)}',
@@ -1361,8 +1444,8 @@ class _AssignmentCard extends StatelessWidget {
                     ),
                     child: Icon(
                       assignment.type == 'quiz'
-                          ? Icons.quiz_rounded
-                          : Icons.assignment_rounded,
+                          ? Icons.quiz
+                          : Icons.assignment,
                       color: Colors.white,
                       size: 22,
                     ),
@@ -1374,10 +1457,10 @@ class _AssignmentCard extends StatelessWidget {
                       children: [
                         Text(
                           assignment.title,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -1385,13 +1468,13 @@ class _AssignmentCard extends StatelessWidget {
                           'Posted ${formatTime(assignment.createdAt)}',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.white.withValues(alpha: 0.4),
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const Icon(Icons.chevron_right_rounded, color: Colors.white54),
+                  Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onSurfaceVariant),
                 ],
               ),
               const SizedBox(height: 16),
@@ -1401,13 +1484,13 @@ class _AssignmentCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFF8E53).withValues(alpha: 0.1),
+                    color: const Color(0xFFFF8E53).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFFFF8E53).withValues(alpha: 0.2)),
+                    border: Border.all(color: const Color(0xFFFF8E53).withOpacity(0.2)),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.quiz_outlined, size: 16, color: Color(0xFFFF8E53)),
+                      const Icon(Icons.quiz, size: 16, color: Color(0xFFFF8E53)),
                       const SizedBox(width: 8),
                       Text(
                         'Quiz • ${assignment.maxScore?.toInt() ?? 0} questions',
@@ -1426,7 +1509,7 @@ class _AssignmentCard extends StatelessWidget {
                   assignment.description,
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.white.withValues(alpha: 0.85),
+                    color: Theme.of(context).colorScheme.onSurface,
                     height: 1.5,
                   ),
                 ),
@@ -1445,7 +1528,7 @@ class _AssignmentCard extends StatelessWidget {
                   if (assignment.dueDate != null) const SizedBox(width: 8),
                   if (assignment.maxScore != null)
                     _InfoChip(
-                      icon: Icons.score_rounded,
+                      icon: Icons.score,
                       label: '${assignment.maxScore} pts',
                       color: const Color(0xFF00C9A7),
                     ),
@@ -1458,10 +1541,10 @@ class _AssignmentCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.03),
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.05)),
+                        color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.3)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1471,7 +1554,7 @@ class _AssignmentCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: Colors.white.withValues(alpha: 0.5),
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -1482,6 +1565,7 @@ class _AssignmentCard extends StatelessWidget {
                             fileName: attachment.fileName,
                             fileType: attachment.fileType,
                             fileSize: attachment.fileSizeFormatted,
+                            filePath: attachment.filePath,
                           ),
                         );
                       }),

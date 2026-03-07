@@ -5,6 +5,8 @@ import '../providers/profile_provider.dart';
 import '../services/database_service.dart';
 import 'package:uuid/uuid.dart';
 
+import 'package:flutter_animate/flutter_animate.dart';
+
 class CreateClassroomScreen extends StatefulWidget {
   const CreateClassroomScreen({super.key});
 
@@ -61,116 +63,78 @@ class _CreateClassroomScreenState extends State<CreateClassroomScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0F0C29),
-              Color(0xFF302B63),
-              Color(0xFF24243E),
-            ],
-          ),
-        ),
+        color: Theme.of(context).colorScheme.surface,
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
+          child: CustomScrollView(
+            slivers: [
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Back button
                 IconButton(
-                  icon: const Icon(Icons.arrow_back_ios,
-                      color: Colors.white70),
+                  icon: Icon(Icons.chevron_left_rounded,
+                      color: Theme.of(context).colorScheme.onSurface),
                   onPressed: () => Navigator.pop(context),
                 ),
                 const SizedBox(height: 24),
 
                 // Title
-                const Text(
+                Text(
                   'Create\nClassroom',
-                  style: TextStyle(
-                    fontSize: 36,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    height: 1.2,
-                  ),
-                ),
+                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.primary,
+                        height: 1.2,
+                      ),
+                ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1, end: 0),
                 const SizedBox(height: 8),
                 Text(
                   'Students will join using the password you set',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white.withValues(alpha: 0.5),
-                  ),
-                ),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1, end: 0),
                 const SizedBox(height: 40),
 
                 // Classroom name
                 TextField(
                   controller: _nameController,
-                  style: const TextStyle(color: Colors.white),
+                  style: Theme.of(context).textTheme.bodyLarge,
                   decoration: InputDecoration(
                     labelText: 'Classroom Name',
                     hintText: 'e.g. Math 101',
-                    labelStyle:
-                        TextStyle(color: Colors.white.withValues(alpha: 0.6)),
-                    hintStyle:
-                        TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-                    prefixIcon: Icon(Icons.class_rounded,
-                        color: Colors.white.withValues(alpha: 0.6)),
-                    filled: true,
-                    fillColor: Colors.white.withValues(alpha: 0.08),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide.none,
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide:
-                          const BorderSide(color: Color(0xFF6C63FF)),
-                    ),
+                    prefixIcon: Icon(Icons.book_rounded,
+                        color: Theme.of(context).colorScheme.primary),
                   ),
-                ),
+                ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.1, end: 0),
                 const SizedBox(height: 20),
 
                 // Password
                 TextField(
                   controller: _passwordController,
                   obscureText: !_showPassword,
-                  style: const TextStyle(color: Colors.white),
+                  style: Theme.of(context).textTheme.bodyLarge,
                   decoration: InputDecoration(
                     labelText: 'Classroom Password',
-                    hintText: 'Set a password for students',
-                    labelStyle:
-                        TextStyle(color: Colors.white.withValues(alpha: 0.6)),
-                    hintStyle:
-                        TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-                    prefixIcon: Icon(Icons.lock_outline,
-                        color: Colors.white.withValues(alpha: 0.6)),
+                    hintText: 'Set a password',
+                    prefixIcon: Icon(Icons.lock_rounded,
+                        color: Theme.of(context).colorScheme.primary),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _showPassword
-                            ? Icons.visibility_off
-                            : Icons.visibility,
-                        color: Colors.white.withValues(alpha: 0.6),
+                            ? Icons.visibility_off_rounded
+                            : Icons.visibility_rounded,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                       onPressed: () =>
                           setState(() => _showPassword = !_showPassword),
                     ),
-                    filled: true,
-                    fillColor: Colors.white.withValues(alpha: 0.08),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide.none,
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide:
-                          const BorderSide(color: Color(0xFF6C63FF)),
-                    ),
                   ),
-                ),
+                ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1, end: 0),
 
                 const Spacer(),
 
@@ -180,27 +144,23 @@ class _CreateClassroomScreenState extends State<CreateClassroomScreen> {
                   height: 56,
                   child: ElevatedButton.icon(
                     onPressed: _createClassroom,
-                    icon: const Icon(Icons.wifi_tethering_rounded),
-                    label: const Text(
+                    icon: Icon(Icons.cell_tower_rounded, color: Theme.of(context).colorScheme.onPrimary),
+                    label: Text(
                       'Create Classroom',
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF6C63FF),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      elevation: 8,
-                      shadowColor:
-                          const Color(0xFF6C63FF).withValues(alpha: 0.4),
+                      style: TextStyle(
+                            fontSize: 16, 
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onPrimary,
+                          ),
                     ),
                   ),
-                ),
+                ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.1, end: 0),
                 const SizedBox(height: 16),
               ],
             ),
+          ),
+              ),
+            ],
           ),
         ),
       ),

@@ -3,6 +3,8 @@ class Attachment {
   final String? postId;
   final String? assignmentId;
   final String? submissionId;
+  final String? threadId;
+  final String? replyId;
   final String fileName;
   final String fileType; // extension: pdf, jpg, png, mp3, mp4, csv, docx, ppt
   final String filePath; // local file path on device
@@ -13,6 +15,8 @@ class Attachment {
     this.postId,
     this.assignmentId,
     this.submissionId,
+    this.threadId,
+    this.replyId,
     required this.fileName,
     required this.fileType,
     required this.filePath,
@@ -25,6 +29,8 @@ class Attachment {
       'postId': postId,
       'assignmentId': assignmentId,
       'submissionId': submissionId,
+      'threadId': threadId,
+      'replyId': replyId,
       'fileName': fileName,
       'fileType': fileType,
       'filePath': filePath,
@@ -38,6 +44,8 @@ class Attachment {
       postId: map['postId'] as String?,
       assignmentId: map['assignmentId'] as String?,
       submissionId: map['submissionId'] as String?,
+      threadId: map['threadId'] as String?,
+      replyId: map['replyId'] as String?,
       fileName: map['fileName'] as String,
       fileType: map['fileType'] as String,
       filePath: map['filePath'] as String,

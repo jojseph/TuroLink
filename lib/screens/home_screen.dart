@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/profile_provider.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+
 import 'dashboard_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -76,158 +78,104 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0F0C29),
-              Color(0xFF302B63),
-              Color(0xFF24243E),
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: FadeTransition(
-            opacity: _fadeAnim,
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 32),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // App icon
-                    Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          width: 2,
-                        ),
-                      ),
-                      child: const Icon(
-                        Icons.wifi_tethering_rounded,
-                        size: 50,
-                        color: Color(0xFF6C63FF),
-                      ),
+      body: SafeArea(
+        child: FadeTransition(
+          opacity: _fadeAnim,
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // App icon
+                  Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primaryContainer,
+                      shape: BoxShape.circle,
                     ),
-                    const SizedBox(height: 24),
+                    child: Icon(
+                      Icons.cell_tower_rounded,
+                      size: 40,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ).animate().scale(duration: 500.ms, curve: Curves.easeOutBack),
+                  const SizedBox(height: 24),
 
-                    // Title
-                    const Text(
-                      'P2P Classroom',
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Teach & Learn — No Internet Needed',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.white.withValues(alpha: 0.6),
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 48),
-
-                    // Name field
-                    TextField(
-                      controller: _nameController,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
-                        labelText: 'Your Name',
-                        labelStyle: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.6)),
-                        prefixIcon: Icon(Icons.person_outline,
-                            color: Colors.white.withValues(alpha: 0.6)),
-                        filled: true,
-                        fillColor: Colors.white.withValues(alpha: 0.08),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide.none,
+                  Text(
+                    'TuroLink',
+                    style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
                         ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide:
-                              const BorderSide(color: Color(0xFF6C63FF)),
+                  ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2, end: 0),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Local First. Limitless Learning.',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
-                      ),
-                    ),
-                    const SizedBox(height: 32),
+                  ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.2, end: 0),
+                  const SizedBox(height: 56),
 
-                    // Role selector
-                    Text(
-                      'I am a...',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.white.withValues(alpha: 0.7),
-                      ),
+                  // Name field
+                  TextField(
+                    controller: _nameController,
+                    style: Theme.of(context).textTheme.bodyLarge,
+                    decoration: const InputDecoration(
+                      labelText: 'What\'s your name?',
+                      prefixIcon: Icon(Icons.person_rounded),
                     ),
+                  ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.2, end: 0),
+                  const SizedBox(height: 32),
+
+                  // Role selector
+                  Text(
+                    'I am a...',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.2, end: 0),
                     const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _RoleCard(
-                            icon: Icons.school_rounded,
-                            label: 'Teacher',
-                            isSelected: _isTeacher,
-                            onTap: () => setState(() => _isTeacher = true),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _RoleCard(
+                              icon: Icons.co_present_rounded,
+                              label: 'Teacher',
+                              isSelected: _isTeacher,
+                              onTap: () => setState(() => _isTeacher = true),
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: _RoleCard(
-                            icon: Icons.menu_book_rounded,
-                            label: 'Student',
-                            isSelected: !_isTeacher,
-                            onTap: () => setState(() => _isTeacher = false),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _RoleCard(
+                              icon: Icons.menu_book_rounded,
+                              label: 'Student',
+                              isSelected: !_isTeacher,
+                              onTap: () => setState(() => _isTeacher = false),
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 40),
+                        ],
+                      ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.2, end: 0),
+                      const SizedBox(height: 40),
 
                     // Continue button
+                    const SizedBox(height: 48),
                     SizedBox(
                       width: double.infinity,
-                      height: 56,
+                      height: 60,
                       child: ElevatedButton(
                         onPressed: _continue,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF6C63FF),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          elevation: 8,
-                          shadowColor:
-                              const Color(0xFF6C63FF).withValues(alpha: 0.4),
-                        ),
-                        child: const Text(
-                          'Continue',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
+                        child: const Text('Get Started'),
                       ),
-                    ),
+                    ).animate().fadeIn(delay: 700.ms).slideY(begin: 0.2, end: 0),
                   ],
                 ),
               ),
             ),
           ),
         ),
-      ),
     );
   }
 }
@@ -247,20 +195,18 @@ class _RoleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 24),
         decoration: BoxDecoration(
-          color: isSelected
-              ? const Color(0xFF6C63FF).withValues(alpha: 0.2)
-              : Colors.white.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(20),
+          color: isSelected ? colorScheme.primaryContainer : colorScheme.surface,
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected
-                ? const Color(0xFF6C63FF)
-                : Colors.white.withValues(alpha: 0.1),
+            color: isSelected ? colorScheme.primary : colorScheme.outlineVariant,
             width: 2,
           ),
         ),
@@ -269,20 +215,15 @@ class _RoleCard extends StatelessWidget {
             Icon(
               icon,
               size: 40,
-              color: isSelected
-                  ? const Color(0xFF6C63FF)
-                  : Colors.white.withValues(alpha: 0.5),
+              color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
             ),
             const SizedBox(height: 12),
             Text(
               label,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: isSelected
-                    ? Colors.white
-                    : Colors.white.withValues(alpha: 0.5),
-              ),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
+                  ),
             ),
           ],
         ),

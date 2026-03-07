@@ -82,23 +82,23 @@ class _P2PHubScreenState extends State<P2PHubScreen>
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1A1A2E),
+        backgroundColor: Theme.of(context).colorScheme.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
-        title: const Text(
+        title: Text(
           'Enter Classroom Password',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
         ),
         content: TextField(
           controller: passwordController,
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
           decoration: InputDecoration(
             hintText: 'Password',
             hintStyle:
-                TextStyle(color: Colors.white.withValues(alpha: 0.4)),
+                TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
             filled: true,
-            fillColor: Colors.white.withValues(alpha: 0.08),
+            fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
@@ -110,7 +110,7 @@ class _P2PHubScreenState extends State<P2PHubScreen>
             onPressed: () => Navigator.pop(ctx),
             child: Text('Cancel',
                 style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.6))),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -121,14 +121,7 @@ class _P2PHubScreenState extends State<P2PHubScreen>
                 profile.displayName,
               );
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6C63FF),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: const Text('Join',
-                style: TextStyle(color: Colors.white)),
+            child: const Text('Join'),
           ),
         ],
       ),
@@ -138,18 +131,9 @@ class _P2PHubScreenState extends State<P2PHubScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0F0C29),
-              Color(0xFF302B63),
-              Color(0xFF24243E),
-            ],
-          ),
-        ),
+        color: Theme.of(context).colorScheme.surface,
         child: SafeArea(
           child: Consumer<P2PProvider>(
             builder: (context, p2p, _) {
@@ -191,20 +175,20 @@ class _P2PHubScreenState extends State<P2PHubScreen>
                     Row(
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.arrow_back_ios,
-                              color: Colors.white70),
+                          icon: Icon(Icons.arrow_back_ios,
+                              color: Theme.of(context).colorScheme.onSurface),
                           onPressed: () {
                             p2p.stopAll();
                             Navigator.pop(context);
                           },
                         ),
-                        const Expanded(
+                        Expanded(
                           child: Text(
                             'P2P Hub',
                             style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
                         ),
@@ -217,11 +201,11 @@ class _P2PHubScreenState extends State<P2PHubScreen>
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.05),
+                       decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.1)),
+                            color: Theme.of(context).colorScheme.outlineVariant),
                       ),
                       child: Row(
                         children: [
@@ -237,14 +221,14 @@ class _P2PHubScreenState extends State<P2PHubScreen>
                           ),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: Text(
-                              p2p.statusMessage,
-                              style: TextStyle(
-                                color:
-                                    Colors.white.withValues(alpha: 0.7),
-                                fontSize: 13,
-                              ),
-                            ),
+                             child: Text(
+                               p2p.statusMessage,
+                               style: TextStyle(
+                                 color:
+                                     Theme.of(context).colorScheme.onSurfaceVariant,
+                                 fontSize: 13,
+                               ),
+                             ),
                           ),
                         ],
                       ),
@@ -263,16 +247,17 @@ class _P2PHubScreenState extends State<P2PHubScreen>
                               return CustomPaint(
                                 painter: _RadarPainter(
                                   progress: _pulseController.value,
+                                  context: context,
                                 ),
                                 child: child,
                               );
                             },
-                            child: const Center(
-                              child: Icon(
-                                Icons.wifi_tethering_rounded,
-                                size: 40,
-                                color: Color(0xFF6C63FF),
-                              ),
+                            child: Center(
+                               child: Icon(
+                                 Icons.wifi_tethering_rounded,
+                                 size: 40,
+                                 color: Theme.of(context).colorScheme.primary,
+                               ),
                             ),
                           ),
                         ),
@@ -292,11 +277,11 @@ class _P2PHubScreenState extends State<P2PHubScreen>
                             Text(
                               'Tap the button below to\nscan for nearby classrooms',
                               textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color:
-                                    Colors.white.withValues(alpha: 0.4),
-                                fontSize: 14,
-                              ),
+                               style: TextStyle(
+                                 color:
+                                     Theme.of(context).colorScheme.onSurfaceVariant,
+                                 fontSize: 14,
+                               ),
                             ),
                           ],
                         ),
@@ -311,10 +296,10 @@ class _P2PHubScreenState extends State<P2PHubScreen>
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: Colors.white.withValues(alpha: 0.4),
-                          letterSpacing: 1.5,
-                        ),
-                      ),
+                           color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                           letterSpacing: 1.5,
+                         ),
+                       ),
                       const SizedBox(height: 12),
                     ],
 
@@ -327,14 +312,14 @@ class _P2PHubScreenState extends State<P2PHubScreen>
                             padding: const EdgeInsets.only(bottom: 12),
                             child: Container(
                               decoration: BoxDecoration(
-                                color:
-                                    Colors.white.withValues(alpha: 0.06),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: const Color(0xFF6C63FF)
-                                      .withValues(alpha: 0.3),
-                                ),
-                              ),
+                                 color:
+                                     Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06),
+                                 borderRadius: BorderRadius.circular(16),
+                                 border: Border.all(
+                                   color: Theme.of(context).colorScheme.primary
+                                       .withValues(alpha: 0.3),
+                                 ),
+                               ),
                               child: ListTile(
                                 contentPadding:
                                     const EdgeInsets.symmetric(
@@ -342,37 +327,36 @@ class _P2PHubScreenState extends State<P2PHubScreen>
                                 leading: Container(
                                   width: 48,
                                   height: 48,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF6C63FF)
-                                        .withValues(alpha: 0.2),
-                                    borderRadius:
-                                        BorderRadius.circular(14),
-                                  ),
-                                  child: const Icon(
-                                    Icons.school_rounded,
-                                    color: Color(0xFF6C63FF),
-                                  ),
+                                   decoration: BoxDecoration(
+                                     color: Theme.of(context).colorScheme.primary
+                                         .withValues(alpha: 0.2),
+                                     borderRadius:
+                                         BorderRadius.circular(14),
+                                   ),
+                                   child: Icon(
+                                     Icons.school_rounded,
+                                     color: Theme.of(context).colorScheme.primary,
+                                   ),
                                 ),
-                                title: Text(
-                                  peer.endpointName,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                subtitle: Text(
-                                  'Tap to join',
-                                  style: TextStyle(
-                                    color: Colors.white
-                                        .withValues(alpha: 0.4),
-                                    fontSize: 12,
-                                  ),
-                                ),
-                                trailing: const Icon(
-                                  Icons.arrow_forward_ios,
-                                  color: Color(0xFF6C63FF),
-                                  size: 18,
-                                ),
+                                 title: Text(
+                                   peer.endpointName,
+                                   style: TextStyle(
+                                     color: Theme.of(context).colorScheme.onSurface,
+                                     fontWeight: FontWeight.w600,
+                                   ),
+                                 ),
+                                 subtitle: Text(
+                                   'Tap to join',
+                                   style: TextStyle(
+                                     color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                     fontSize: 12,
+                                   ),
+                                 ),
+                                 trailing: Icon(
+                                   Icons.arrow_forward_ios,
+                                   color: Theme.of(context).colorScheme.primary,
+                                   size: 18,
+                                 ),
                                 onTap: () {
                                   if (p2p.state !=
                                       P2PState.connected) {
@@ -406,16 +390,16 @@ class _P2PHubScreenState extends State<P2PHubScreen>
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _isScanning
-                              ? Colors.red.shade700
-                              : const Color(0xFF6C63FF),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          elevation: 8,
-                        ),
+                         style: ElevatedButton.styleFrom(
+                           backgroundColor: _isScanning
+                               ? Colors.red.shade700
+                               : Theme.of(context).colorScheme.primary,
+                           foregroundColor: Colors.white,
+                           shape: RoundedRectangleBorder(
+                             borderRadius: BorderRadius.circular(16),
+                           ),
+                           elevation: 8,
+                         ),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -455,9 +439,6 @@ class _P2PHubScreenState extends State<P2PHubScreen>
                         style: OutlinedButton.styleFrom(
                           foregroundColor: const Color(0xFF00C9A7),
                           side: const BorderSide(color: Color(0xFF00C9A7), width: 2),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
                         ),
                       ),
                     ),
@@ -475,8 +456,9 @@ class _P2PHubScreenState extends State<P2PHubScreen>
 /// Custom painter for the radar pulse animation
 class _RadarPainter extends CustomPainter {
   final double progress;
+  final BuildContext context; // Added context to access theme
 
-  _RadarPainter({required this.progress});
+  _RadarPainter({required this.progress, required this.context});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -488,8 +470,8 @@ class _RadarPainter extends CustomPainter {
       final radius = maxRadius * ringProgress;
       final opacity = (1.0 - ringProgress) * 0.4;
 
-      final paint = Paint()
-        ..color = const Color(0xFF6C63FF).withValues(alpha: opacity)
+       final paint = Paint()
+        ..color = Theme.of(context).colorScheme.primary.withValues(alpha: opacity)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2;
 

@@ -13,7 +13,11 @@ import '../providers/p2p_provider.dart';
 import '../providers/profile_provider.dart';
 import '../services/database_service.dart';
 import 'student_assignment_detail_screen.dart';
+import 'forum/forum_feed_view.dart';
 import 'ai_chatbot_screen.dart';
+
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 class StudentDashboardScreen extends StatefulWidget {
   final Classroom classroom;
@@ -36,7 +40,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _tabController.addListener(() {
       setState(() {});
     });
@@ -152,10 +156,24 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen>
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: QrImageView(
-                data: qrData,
-                version: QrVersions.auto,
-                size: 200.0,
+              child: SizedBox(
+                width: 200,
+                height: 200,
+                child: QrImageView(
+                  data: qrData,
+                  version: QrVersions.auto,
+                  size: 200.0,
+                  backgroundColor: Colors.white,
+                  padding: EdgeInsets.zero,
+                  eyeStyle: const QrEyeStyle(
+                    eyeShape: QrEyeShape.square,
+                    color: Color(0xFF000000),
+                  ),
+                  dataModuleStyle: const QrDataModuleStyle(
+                    dataModuleShape: QrDataModuleShape.square,
+                    color: Color(0xFF000000),
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -208,17 +226,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen>
 
   Widget _buildClassroomView(P2PProvider p2p, List<Post> posts, List<Assignment> assignments, bool connected) {
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF0F0C29),
-            Color(0xFF302B63),
-            Color(0xFF24243E),
-          ],
-        ),
-      ),
+      color: Theme.of(context).colorScheme.surface,
       child: SafeArea(
         bottom: false,
         child: Column(
@@ -233,8 +241,8 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen>
                   Row(
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.arrow_back_ios,
-                            color: Colors.white70),
+                        icon: const Icon(LucideIcons.chevronLeft,
+                            color: Colors.black),
                         onPressed: () {
                           if (connected) p2p.stopAll();
                           Navigator.pop(context);
@@ -247,10 +255,10 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen>
                           children: [
                             Text(
                               widget.classroom.name,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                                color: Theme.of(context).colorScheme.onSurface,
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -258,8 +266,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen>
                               'Teacher: ${widget.classroom.teacherName}',
                               style: TextStyle(
                                 fontSize: 13,
-                                color: Colors.white
-                                    .withValues(alpha: 0.5),
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
                               ),
                             ),
                           ],
@@ -273,7 +280,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen>
                             border: Border.all(color: const Color(0xFF00C9A7).withValues(alpha: 0.3)),
                           ),
                           child: IconButton(
-                            icon: const Icon(Icons.share_rounded, color: Color(0xFF00C9A7), size: 20),
+                            icon: const Icon(Icons.share, color: Color(0xFF00C9A7), size: 20),
                             onPressed: () => _showShareUpdatesDialog(p2p),
                             tooltip: 'Share offline updates to peers',
                           ),
@@ -290,7 +297,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen>
                     decoration: BoxDecoration(
                       color: (connected
                               ? Colors.greenAccent
-                              : Colors.white)
+                              : Theme.of(context).colorScheme.onSurface)
                           .withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
@@ -319,9 +326,9 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen>
                                 ? (p2p.state == P2PState.advertising ? 'Sharing live with peers...' : 'Connected to teacher')
                                 : 'Offline — viewing saved posts',
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.7),
-                              fontSize: 13,
-                            ),
+                               color: Theme.of(context).colorScheme.onSurfaceVariant,
+                               fontSize: 13,
+                             ),
                           ),
                         ),
                         if (connected)
@@ -341,28 +348,24 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen>
                   ),
                   const SizedBox(height: 16),
                   
-                  // Tab Bar
                   TabBar(
                     controller: _tabController,
-                    indicatorColor: const Color(0xFF00C9A7),
-                    labelColor: Colors.white,
-                    unselectedLabelColor: Colors.white54,
+                    indicatorColor: Theme.of(context).colorScheme.primary,
+                    labelColor: Theme.of(context).colorScheme.primary,
+                    unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant,
+                    labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                    unselectedLabelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                    labelPadding: const EdgeInsets.symmetric(horizontal: 2),
                     tabs: const [
                       Tab(text: 'Announcements'),
                       Tab(text: 'Assignments'),
+                      Tab(text: 'Forum'),
                     ],
                   ),
                 ],
               ),
             ),
 
-          // Divider
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Divider(
-              color: Colors.white.withValues(alpha: 0.08),
-            ),
-          ),
 
           // TabBarView Content
           Expanded(
@@ -374,6 +377,9 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen>
                 
                 // Assignments view
                 _buildAssignmentsView(assignments, connected, p2p),
+                
+                // Forum view
+                ForumFeedView(classroom: widget.classroom, isTeacher: false),
               ],
             ),
           ),
@@ -403,32 +409,27 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen>
           // Bottom Navigation Bar
           bottomNavigationBar: Container(
             decoration: BoxDecoration(
-              color: const Color(0xFF1A1A2E),
-              border: Border(
-                top: BorderSide(
-                  color: Colors.white.withValues(alpha: 0.06),
-                ),
-              ),
+              color: Theme.of(context).colorScheme.surface,
             ),
             child: BottomNavigationBar(
               currentIndex: _selectedNavIndex,
               onTap: (index) => setState(() => _selectedNavIndex = index),
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              selectedItemColor: const Color(0xFF6C63FF),
-              unselectedItemColor: Colors.white38,
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              elevation: 4,
+              selectedItemColor: Theme.of(context).colorScheme.primary,
+              unselectedItemColor: Theme.of(context).colorScheme.onSurfaceVariant,
               selectedFontSize: 12,
               unselectedFontSize: 12,
               type: BottomNavigationBarType.fixed,
               items: const [
                 BottomNavigationBarItem(
-                  icon: Icon(Icons.school_rounded),
-                  activeIcon: Icon(Icons.school_rounded),
+                  icon: Icon(LucideIcons.graduationCap),
+                  activeIcon: Icon(LucideIcons.graduationCap),
                   label: 'Classroom',
                 ),
                 BottomNavigationBarItem(
-                  icon: Icon(Icons.auto_awesome_outlined),
-                  activeIcon: Icon(Icons.auto_awesome),
+                  icon: Icon(LucideIcons.sparkles),
+                  activeIcon: Icon(LucideIcons.sparkles),
                   label: 'AI Assistant',
                 ),
               ],
@@ -446,7 +447,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.inbox_rounded,
+              LucideIcons.inbox,
               size: 64,
               color: Colors.white.withValues(alpha: 0.15),
             ),
@@ -492,7 +493,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.assignment_rounded,
+              LucideIcons.clipboardList,
               size: 64,
               color: Colors.white.withValues(alpha: 0.15),
             ),
@@ -576,10 +577,10 @@ class _StudentPostCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.06),
-          borderRadius: BorderRadius.circular(16),
+          color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: Colors.white.withValues(alpha: 0.06),
+            color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.2),
           ),
         ),
         child: Column(
@@ -592,21 +593,20 @@ class _StudentPostCard extends StatelessWidget {
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF6C63FF)
-                        .withValues(alpha: 0.2),
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(
-                    Icons.school_rounded,
+                  child: Icon(
+                    Icons.school,
                     size: 16,
-                    color: Color(0xFF6C63FF),
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
                 const SizedBox(width: 10),
                 Text(
                   teacherName,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.6),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                   ),
@@ -614,8 +614,8 @@ class _StudentPostCard extends StatelessWidget {
                 const Spacer(),
                 Text(
                   formatTime(post.createdAt),
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.3),
+                   style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
                     fontSize: 11,
                   ),
                 ),
@@ -628,11 +628,11 @@ class _StudentPostCard extends StatelessWidget {
             if (post.content.isNotEmpty)
               Text(
                 post.content,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
-                  height: 1.5,
-                ),
+                 style: TextStyle(
+                   color: Theme.of(context).colorScheme.onSurface,
+                   fontSize: 15,
+                   height: 1.5,
+                 ),
               ),
 
             // Image preview (inline for images)
@@ -642,7 +642,7 @@ class _StudentPostCard extends StatelessWidget {
               // Show image previews first
               ...post.attachments
                   .where((a) => a.isImage)
-                  .map((attachment) => _buildImagePreview(attachment)),
+                  .map((attachment) => _buildImagePreview(context, attachment)),
 
               // Show non-image attachments as tappable badges
               if (post.attachments.any((a) => !a.isImage))
@@ -664,10 +664,10 @@ class _StudentPostCard extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.05, end: 0, curve: Curves.easeOutCubic);
   }
 
-  Widget _buildImagePreview(Attachment attachment) {
+  Widget _buildImagePreview(BuildContext context, Attachment attachment) {
     final file = File(attachment.filePath);
     final progress = p2p.fileTransferProgress[attachment.id];
     
@@ -681,47 +681,47 @@ class _StudentPostCard extends StatelessWidget {
                 width: double.infinity,
                 height: 200,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _imagePlaceholder(attachment, progress),
+                errorBuilder: (_, __, ___) => _imagePlaceholder(context, attachment, progress),
               )
-            : _imagePlaceholder(attachment, progress),
+            : _imagePlaceholder(context, attachment, progress),
       ),
     );
   }
 
-  Widget _imagePlaceholder(Attachment attachment, [double? progress]) {
+  Widget _imagePlaceholder(BuildContext context, Attachment attachment, [double? progress]) {
     return Container(
       width: double.infinity,
       height: 120,
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.04),
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.image_rounded, size: 32,
-              color: Colors.white.withValues(alpha: 0.2)),
+           Icon(Icons.image, size: 32,
+               color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2)),
           const SizedBox(height: 8),
           if (progress != null) ...[
             SizedBox(
               width: 100,
               child: LinearProgressIndicator(
                 value: progress,
-                backgroundColor: Colors.white.withValues(alpha: 0.1),
+                 backgroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
                 color: const Color(0xFF6C63FF),
               ),
             ),
             const SizedBox(height: 8),
             Text(
               'Downloading ${(progress * 100).toStringAsFixed(0)}%',
-              style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.5), fontSize: 12),
+               style: TextStyle(
+                   color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
             ),
           ] else
             Text(
               attachment.fileName,
-              style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.3), fontSize: 12),
+               style: TextStyle(
+                   color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
             ),
         ],
       ),
@@ -745,21 +745,21 @@ class _FileAttachmentButton extends StatelessWidget {
   IconData _getIcon() {
     switch (attachment.fileType.toLowerCase()) {
       case 'pdf':
-        return Icons.picture_as_pdf_rounded;
+        return Icons.picture_as_pdf;
       case 'mp3':
-        return Icons.audiotrack_rounded;
+        return Icons.audiotrack;
       case 'mp4':
-        return Icons.videocam_rounded;
+        return Icons.videocam;
       case 'csv':
-        return Icons.table_chart_rounded;
+        return Icons.table_chart;
       case 'docx':
       case 'doc':
-        return Icons.description_rounded;
+        return Icons.description;
       case 'ppt':
       case 'pptx':
-        return Icons.slideshow_rounded;
+        return Icons.slideshow;
       default:
-        return Icons.insert_drive_file_rounded;
+        return Icons.insert_drive_file;
     }
   }
 
@@ -838,7 +838,7 @@ class _FileAttachmentButton extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 6),
-              Icon(Icons.open_in_new_rounded, size: 12, color: color),
+              Icon(Icons.open_in_new, size: 12, color: color),
             ],
           ],
         ),
@@ -874,10 +874,10 @@ class _StudentAssignmentCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.06),
+          color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: Colors.white.withValues(alpha: 0.06),
+            color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.2),
           ),
         ),
         child: Column(
@@ -899,8 +899,8 @@ class _StudentAssignmentCard extends StatelessWidget {
                   ),
                   child: Icon(
                     assignment.type == 'quiz'
-                        ? Icons.quiz_rounded
-                        : Icons.assignment_rounded,
+                        ? Icons.quiz
+                        : Icons.school,
                     color: Colors.white,
                     size: 22,
                   ),
@@ -915,10 +915,10 @@ class _StudentAssignmentCard extends StatelessWidget {
                           Expanded(
                             child: Text(
                               assignment.title,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                                color: Theme.of(context).colorScheme.onSurface,
                               ),
                             ),
                           ),
@@ -951,7 +951,7 @@ class _StudentAssignmentCard extends StatelessWidget {
                         'Assigned by $teacherName',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.white.withValues(alpha: 0.5),
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -970,8 +970,8 @@ class _StudentAssignmentCard extends StatelessWidget {
                 assignment.description,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontSize: 14,
                   height: 1.5,
                 ),
@@ -1028,14 +1028,14 @@ class _StudentAssignmentCard extends StatelessWidget {
                     ),
                   ),
                 const Spacer(),
-                const Icon(Icons.chevron_right_rounded, color: Colors.white54),
+                Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onSurfaceVariant),
               ],
             ),
             
             // Attachments
             if (assignment.hasAttachments) ...[
               const SizedBox(height: 16),
-              const Divider(color: Colors.white12),
+              Divider(color: Theme.of(context).colorScheme.outlineVariant),
               const SizedBox(height: 12),
               
               // Non-image Attachments
@@ -1058,7 +1058,7 @@ class _StudentAssignmentCard extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.05, end: 0, curve: Curves.easeOutCubic);
   }
 
   Widget _buildQuizSummary(Assignment assignment) {
@@ -1080,7 +1080,7 @@ class _StudentAssignmentCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.quiz_outlined, size: 16, color: Color(0xFFFF8E53)),
+          const Icon(Icons.quiz, size: 16, color: Color(0xFFFF8E53)),
           const SizedBox(width: 8),
           Text(
             questionCount > 0

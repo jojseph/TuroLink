@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 import 'package:uuid/uuid.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/quiz.dart';
 import '../models/assignment.dart';
 import '../models/classroom.dart';
@@ -118,9 +119,9 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
           final viewInsets = MediaQuery.of(ctx).viewInsets;
           return Container(
             padding: EdgeInsets.only(bottom: viewInsets.bottom),
-            decoration: const BoxDecoration(
-              color: Color(0xFF2A2A40),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHigh,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             ),
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
@@ -133,10 +134,10 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
                     children: [
                       const Text(
                         'Add Question',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.close_rounded, color: Colors.white54),
+                        icon: Icon(Icons.close_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant),
                         onPressed: () => Navigator.pop(ctx),
                       ),
                     ],
@@ -158,11 +159,11 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
                                 shape: BoxShape.circle,
                                 color: correctIndex == i
                                     ? const Color(0xFF4ECB71)
-                                    : Colors.white.withValues(alpha: 0.1),
+                                    : Theme.of(context).colorScheme.outlineVariant.withOpacity(0.3),
                                 border: Border.all(
                                   color: correctIndex == i
                                       ? const Color(0xFF4ECB71)
-                                      : Colors.white.withValues(alpha: 0.2),
+                                      : Theme.of(context).colorScheme.outlineVariant,
                                 ),
                               ),
                               child: correctIndex == i
@@ -181,7 +182,7 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
                   const SizedBox(height: 8),
                   Text(
                     'Tap the circle to mark the correct answer',
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 12),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
@@ -211,8 +212,8 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
                       Navigator.pop(ctx);
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF6C63FF),
-                      foregroundColor: Colors.white,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
@@ -249,9 +250,9 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
           final viewInsets = MediaQuery.of(ctx).viewInsets;
           return Container(
             padding: EdgeInsets.only(bottom: viewInsets.bottom),
-            decoration: const BoxDecoration(
-              color: Color(0xFF2A2A40),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHigh,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             ),
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
@@ -264,10 +265,10 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
                     children: [
                       const Text(
                         'Edit Question',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.close_rounded, color: Colors.white54),
+                        icon: Icon(Icons.close_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant),
                         onPressed: () => Navigator.pop(ctx),
                       ),
                     ],
@@ -289,11 +290,11 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
                                 shape: BoxShape.circle,
                                 color: correctIndex == i
                                     ? const Color(0xFF4ECB71)
-                                    : Colors.white.withValues(alpha: 0.1),
+                                    : Theme.of(context).colorScheme.outlineVariant.withOpacity(0.3),
                                 border: Border.all(
                                   color: correctIndex == i
                                       ? const Color(0xFF4ECB71)
-                                      : Colors.white.withValues(alpha: 0.2),
+                                      : Theme.of(context).colorScheme.outlineVariant,
                                 ),
                               ),
                               child: correctIndex == i
@@ -335,8 +336,8 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
                       Navigator.pop(ctx);
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF6C63FF),
-                      foregroundColor: Colors.white,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
@@ -372,9 +373,9 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
           final viewInsets = MediaQuery.of(ctx).viewInsets;
           return Container(
             padding: EdgeInsets.only(bottom: viewInsets.bottom),
-            decoration: const BoxDecoration(
-              color: Color(0xFF2A2A40),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHigh,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             ),
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
@@ -391,12 +392,12 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
                           SizedBox(width: 8),
                           Text(
                             'Generate with AI',
-                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
                       IconButton(
-                        icon: const Icon(Icons.close_rounded, color: Colors.white54),
+                        icon: Icon(Icons.close_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant),
                         onPressed: () => Navigator.pop(ctx),
                       ),
                     ],
@@ -404,7 +405,7 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
                   const SizedBox(height: 8),
                   Text(
                     'Attach a PDF or paste text. The AI will generate multiple-choice questions from the content.',
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 13, height: 1.4),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13, height: 1.4),
                   ),
                   const SizedBox(height: 16),
 
@@ -426,26 +427,26 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
                       decoration: BoxDecoration(
                         color: pdfFile != null
                             ? const Color(0xFF6C63FF).withValues(alpha: 0.15)
-                            : Colors.white.withValues(alpha: 0.05),
+                            : Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
                           color: pdfFile != null
                               ? const Color(0xFF6C63FF).withValues(alpha: 0.3)
-                              : Colors.white.withValues(alpha: 0.1),
+                              : Theme.of(context).colorScheme.outlineVariant,
                         ),
                       ),
                       child: Row(
                         children: [
                           Icon(
                             pdfFile != null ? Icons.picture_as_pdf_rounded : Icons.attach_file_rounded,
-                            color: pdfFile != null ? Colors.redAccent : Colors.white54,
+                            color: pdfFile != null ? Colors.redAccent : Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
                               pdfFile?.name ?? 'Attach a PDF file',
                               style: TextStyle(
-                                color: pdfFile != null ? Colors.white : Colors.white54,
+                                color: pdfFile != null ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurfaceVariant,
                                 fontSize: 14,
                               ),
                               maxLines: 1,
@@ -455,7 +456,7 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
                           if (pdfFile != null)
                             GestureDetector(
                               onTap: () => setModalState(() => pdfFile = null),
-                              child: const Icon(Icons.close_rounded, color: Colors.white38, size: 20),
+                              child: Icon(Icons.close_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant, size: 20),
                             ),
                         ],
                       ),
@@ -465,7 +466,7 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
                   const SizedBox(height: 12),
                   Text(
                     'Or paste/type text:',
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 13),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13),
                   ),
                   const SizedBox(height: 8),
                   _buildTextField(textCtrl, 'Paste your text content here…', maxLines: 5),
@@ -474,24 +475,24 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
                   // Number of questions
                   Row(
                     children: [
-                      Text('Questions:', style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 14)),
+                      Text('Questions:', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 14)),
                       const Spacer(),
                       Container(
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.06),
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Row(
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.remove, color: Colors.white54, size: 18),
+                              icon: Icon(Icons.remove, color: Theme.of(context).colorScheme.onSurfaceVariant, size: 18),
                               onPressed: numQuestions > 1
                                   ? () => setModalState(() => numQuestions--)
                                   : null,
                             ),
-                            Text('$numQuestions', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                            Text('$numQuestions', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.bold)),
                             IconButton(
-                              icon: const Icon(Icons.add, color: Colors.white54, size: 18),
+                              icon: Icon(Icons.add, color: Theme.of(context).colorScheme.onSurfaceVariant, size: 18),
                               onPressed: numQuestions < 10
                                   ? () => setModalState(() => numQuestions++)
                                   : null,
@@ -565,8 +566,8 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
                       style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF6C63FF),
-                      foregroundColor: Colors.white,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
@@ -604,9 +605,13 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
     required int numQuestions,
   }) async {
     final aiService = AiChatService();
+    
+    // Load saved token if available
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('hf_token');
 
     try {
-      await aiService.init();
+      await aiService.init(hfToken: token);
     } catch (e) {
       throw Exception('Failed to initialize AI: $e');
     }
@@ -645,10 +650,17 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
         await aiService.clearHistory();
 
         final prompt =
-            'Read this text and create 1 multiple choice question with 4 answer choices. '
-            'Mark the correct answer.\n\n'
-            'Text: $sourceText\n\n'
-            'Question ${q + 1}:';
+            'Create exactly 1 multiple choice question based on the text. '
+            'Respond STRICTLY in English characters only. '
+            'Respond ONLY with the question, the 4 choices, and the correct answer. '
+            'Do not add any conversational text. Use this exact format:\n'
+            'Question: <question text>\n'
+            'A) <choice 1>\n'
+            'B) <choice 2>\n'
+            'C) <choice 3>\n'
+            'D) <choice 4>\n'
+            'Answer: <A, B, C, or D>\n\n'
+            'Text: $sourceText';
 
         final response = await aiService.generateResponse(prompt);
 
@@ -736,17 +748,28 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
       final lines = response.split('\n').where((l) => l.trim().isNotEmpty).toList();
       if (lines.length < 2) return null;
 
-      // Extract question (first substantial line)
-      String question = '';
-      int choiceStartIdx = 0;
+      // Find where the choices start
+      int firstChoiceIdx = -1;
       for (int i = 0; i < lines.length; i++) {
         final line = lines[i].trim();
-        if (line.length > 10 && !RegExp(r'^[A-D][\).\s]').hasMatch(line)) {
-          question = line.replaceAll(RegExp(r'^(Question\s*\d*\s*[:.]?\s*)'), '').trim();
-          choiceStartIdx = i + 1;
+        if (RegExp(r'^[A-D][\).\s]').hasMatch(line)) {
+          firstChoiceIdx = i;
           break;
         }
       }
+
+      if (firstChoiceIdx <= 0) return null;
+
+      // The question is usually the line immediately before the choices
+      String question = lines[firstChoiceIdx - 1].trim();
+      
+      // If the question line is empty or too short, look one line higher just in case
+      if (question.length < 5 && firstChoiceIdx > 1) {
+          question = lines[firstChoiceIdx - 2].trim();
+      }
+
+      question = question.replaceAll(RegExp(r'^(Question\s*\d*\s*[:.]?\s*)', caseSensitive: false), '').trim();
+      int choiceStartIdx = firstChoiceIdx;
 
       if (question.isEmpty) return null;
 
@@ -836,9 +859,9 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
       builder: (ctx) {
         return StatefulBuilder(builder: (ctx, setModalState) {
           return Container(
-            decoration: const BoxDecoration(
-              color: Color(0xFF2A2A40),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHigh,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             ),
             child: Padding(
               padding: const EdgeInsets.all(24),
@@ -851,10 +874,10 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
                     children: [
                       const Text(
                         'Send to Classrooms',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.close_rounded, color: Colors.white54),
+                        icon: Icon(Icons.close_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant),
                         onPressed: () => Navigator.pop(ctx),
                       ),
                     ],
@@ -862,7 +885,7 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
                   const SizedBox(height: 8),
                   Text(
                     'Select classrooms to send this quiz to:',
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 13),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13),
                   ),
                   const SizedBox(height: 16),
                   ...classrooms.map((classroom) {
@@ -884,13 +907,13 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
                             color: isSelected
-                                ? const Color(0xFF6C63FF).withValues(alpha: 0.15)
-                                : Colors.white.withValues(alpha: 0.05),
+                                ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+                                : Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: isSelected
-                                  ? const Color(0xFF6C63FF).withValues(alpha: 0.4)
-                                  : Colors.white.withValues(alpha: 0.1),
+                                  ? Theme.of(context).colorScheme.primary.withOpacity(0.4)
+                                  : Theme.of(context).colorScheme.outlineVariant,
                             ),
                           ),
                           child: Row(
@@ -901,8 +924,8 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   color: isSelected
-                                      ? const Color(0xFF6C63FF)
-                                      : Colors.white.withValues(alpha: 0.1),
+                                      ? Theme.of(context).colorScheme.primary
+                                      : Theme.of(context).colorScheme.outlineVariant.withOpacity(0.3),
                                 ),
                                 child: isSelected
                                     ? const Icon(Icons.check, color: Colors.white, size: 16)
@@ -912,7 +935,7 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
                               Expanded(
                                 child: Text(
                                   classroom.name,
-                                  style: const TextStyle(color: Colors.white, fontSize: 15),
+                                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 15),
                                 ),
                               ),
                             ],
@@ -939,10 +962,10 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
                       style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF6C63FF),
-                      foregroundColor: Colors.white,
-                      disabledBackgroundColor: Colors.white.withValues(alpha: 0.06),
-                      disabledForegroundColor: Colors.white38,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                      disabledBackgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                      disabledForegroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
@@ -1000,12 +1023,12 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
     return TextField(
       controller: ctrl,
       maxLines: maxLines,
-      style: const TextStyle(color: Colors.white, fontSize: 14),
+      style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
+        hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
         filled: true,
-        fillColor: const Color(0xFF1E1E2E),
+        fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -1023,17 +1046,7 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
 
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0F0C29),
-              Color(0xFF302B63),
-              Color(0xFF24243E),
-            ],
-          ),
-        ),
+        color: Theme.of(context).colorScheme.surface,
         child: SafeArea(
           child: Column(
             children: [
@@ -1043,22 +1056,22 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
                 child: Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back_ios, color: Colors.white70),
+                      icon: Icon(Icons.arrow_back_ios, color: Theme.of(context).colorScheme.onSurface),
                       onPressed: () => Navigator.pop(context),
                     ),
                     Expanded(
                       child: Text(
                         isNew ? 'Create Quiz' : 'Edit Quiz',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                     ),
                     // Send to classroom
                     IconButton(
-                      icon: const Icon(Icons.send_rounded, color: Color(0xFF00C9A7)),
+                      icon: Icon(Icons.send_rounded, color: Theme.of(context).colorScheme.primary),
                       tooltip: 'Send to classrooms',
                       onPressed: _showSendToClassroomDialog,
                     ),
@@ -1070,8 +1083,8 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
                               width: 16, height: 16,
                               child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                             )
-                          : const Icon(Icons.save_rounded, color: Color(0xFF6C63FF), size: 20),
-                      label: const Text('Save', style: TextStyle(color: Color(0xFF6C63FF), fontWeight: FontWeight.w600)),
+                          : Icon(Icons.save_rounded, color: Theme.of(context).colorScheme.primary, size: 20),
+                      label: Text('Save', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w600)),
                     ),
                   ],
                 ),
@@ -1120,7 +1133,7 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: Colors.white.withValues(alpha: 0.4),
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                             letterSpacing: 1.5,
                           ),
                         ),
@@ -1144,23 +1157,23 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
                       Container(
                         padding: const EdgeInsets.all(32),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.04),
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.06),
+                            color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.3),
                             style: BorderStyle.solid,
                           ),
                         ),
                         child: Column(
                           children: [
                             Icon(Icons.help_outline_rounded, size: 40,
-                                color: Colors.white.withValues(alpha: 0.15)),
+                                color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.3)),
                             const SizedBox(height: 12),
                             Text(
                               'No questions yet.\nUse AI or add them manually.',
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.3),
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
                                 fontSize: 13,
                               ),
                             ),
@@ -1260,9 +1273,9 @@ class _QuestionCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.06),
+          color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+          border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.3)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1292,8 +1305,8 @@ class _QuestionCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     item.question,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       height: 1.4,
@@ -1303,7 +1316,7 @@ class _QuestionCard extends StatelessWidget {
                 GestureDetector(
                   onTap: onEdit,
                   child: Icon(Icons.edit_rounded,
-                      size: 18, color: Colors.white.withValues(alpha: 0.4)),
+                      size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
                 ),
                 const SizedBox(width: 8),
                 GestureDetector(
@@ -1329,11 +1342,11 @@ class _QuestionCard extends StatelessWidget {
                         shape: BoxShape.circle,
                         color: isCorrect
                             ? const Color(0xFF4ECB71).withValues(alpha: 0.2)
-                            : Colors.white.withValues(alpha: 0.05),
+                            : Theme.of(context).colorScheme.outlineVariant.withOpacity(0.15),
                         border: Border.all(
                           color: isCorrect
                               ? const Color(0xFF4ECB71)
-                              : Colors.white.withValues(alpha: 0.15),
+                              : Theme.of(context).colorScheme.outlineVariant,
                           width: 1.5,
                         ),
                       ),
@@ -1343,7 +1356,7 @@ class _QuestionCard extends StatelessWidget {
                               child: Text(
                                 String.fromCharCode(65 + ci),
                                 style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.4),
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -1357,7 +1370,7 @@ class _QuestionCard extends StatelessWidget {
                         style: TextStyle(
                           color: isCorrect
                               ? const Color(0xFF4ECB71)
-                              : Colors.white.withValues(alpha: 0.7),
+                              : Theme.of(context).colorScheme.onSurface,
                           fontSize: 13,
                         ),
                       ),

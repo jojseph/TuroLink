@@ -37,21 +37,21 @@ class _QuizBankScreenState extends State<QuizBankScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1A1A2E),
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Delete Quiz', style: TextStyle(color: Colors.white)),
+        title: Text('Delete Quiz', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
         content: Text(
           'Delete "${quiz.title}"? This cannot be undone.',
-          style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
+            child: Text('Cancel', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete', style: TextStyle(color: Colors.redAccent)),
+            child: Text('Delete', style: TextStyle(color: Theme.of(context).colorScheme.error)),
           ),
         ],
       ),
@@ -79,17 +79,7 @@ class _QuizBankScreenState extends State<QuizBankScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0F0C29),
-              Color(0xFF302B63),
-              Color(0xFF24243E),
-            ],
-          ),
-        ),
+        color: Theme.of(context).colorScheme.surface,
         child: SafeArea(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -100,22 +90,20 @@ class _QuizBankScreenState extends State<QuizBankScreen> {
                 child: Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back_ios, color: Colors.white70),
+                      icon: Icon(Icons.arrow_back_ios, color: Theme.of(context).colorScheme.onSurface),
                       onPressed: () => Navigator.pop(context),
                     ),
                     Container(
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFFF6B6B), Color(0xFFFF8E53)],
-                        ),
+                        color: Theme.of(context).colorScheme.primaryContainer,
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(Icons.quiz_rounded, color: Colors.white, size: 22),
+                      child: Icon(Icons.quiz_rounded, color: Theme.of(context).colorScheme.onPrimaryContainer, size: 22),
                     ),
                     const SizedBox(width: 14),
-                    const Expanded(
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -124,15 +112,15 @@ class _QuizBankScreenState extends State<QuizBankScreen> {
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
-                          SizedBox(height: 2),
+                          const SizedBox(height: 2),
                           Text(
                             'Saved quizzes & resources',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.white54,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ],
@@ -150,7 +138,7 @@ class _QuizBankScreenState extends State<QuizBankScreen> {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: Colors.white.withValues(alpha: 0.4),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     letterSpacing: 1.5,
                   ),
                 ),
@@ -184,9 +172,9 @@ class _QuizBankScreenState extends State<QuizBankScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openEditor(),
-        backgroundColor: const Color(0xFF6C63FF),
-        icon: const Icon(Icons.add_rounded, color: Colors.white),
-        label: const Text('New Quiz', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        icon: Icon(Icons.add_rounded, color: Theme.of(context).colorScheme.onPrimary),
+        label: Text('New Quiz', style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontWeight: FontWeight.w600)),
       ),
     );
   }
@@ -211,13 +199,13 @@ class _QuizBankScreenState extends State<QuizBankScreen> {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Icon(Icons.quiz_outlined,
-                  size: 32, color: Colors.white.withValues(alpha: 0.3)),
+                  size: 32, color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5)),
             ),
             const SizedBox(height: 20),
             Text(
               'No quizzes yet',
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.5),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontSize: 17,
                 fontWeight: FontWeight.w600,
               ),
@@ -227,7 +215,7 @@ class _QuizBankScreenState extends State<QuizBankScreen> {
               'Tap + to create your first quiz.\nYou can generate questions with AI!',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.3),
+                color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.7),
                 fontSize: 13,
                 height: 1.5,
               ),
@@ -250,9 +238,9 @@ class _QuizBankScreenState extends State<QuizBankScreen> {
           child: Container(
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.06),
+              color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+              border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.3)),
             ),
             child: Row(
               children: [
@@ -266,7 +254,7 @@ class _QuizBankScreenState extends State<QuizBankScreen> {
                     ),
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  child: const Icon(Icons.quiz_rounded, color: Colors.white, size: 24),
+                  child: Icon(Icons.quiz_rounded, color: Theme.of(context).colorScheme.onPrimaryContainer, size: 24),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -275,10 +263,10 @@ class _QuizBankScreenState extends State<QuizBankScreen> {
                     children: [
                       Text(
                         quiz.title,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -287,24 +275,24 @@ class _QuizBankScreenState extends State<QuizBankScreen> {
                       Row(
                         children: [
                           Icon(Icons.help_outline_rounded,
-                              size: 14, color: Colors.white.withValues(alpha: 0.4)),
+                              size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
                           const SizedBox(width: 4),
                           Text(
                             '${quiz.itemCount} question${quiz.itemCount == 1 ? '' : 's'}',
                             style: TextStyle(
                               fontSize: 13,
-                              color: Colors.white.withValues(alpha: 0.5),
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
                           ),
                           const SizedBox(width: 12),
                           Icon(Icons.access_time_rounded,
-                              size: 14, color: Colors.white.withValues(alpha: 0.4)),
+                              size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
                           const SizedBox(width: 4),
                           Text(
                             DateFormat('MMM d, y').format(quiz.createdAt),
                             style: TextStyle(
                               fontSize: 13,
-                              color: Colors.white.withValues(alpha: 0.5),
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ],
@@ -313,7 +301,7 @@ class _QuizBankScreenState extends State<QuizBankScreen> {
                   ),
                 ),
                 Icon(Icons.chevron_right_rounded,
-                    color: Colors.white.withValues(alpha: 0.3)),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant),
               ],
             ),
           ),

@@ -10,6 +10,8 @@ import '../models/attachment.dart';
 import '../providers/p2p_provider.dart';
 import '../providers/profile_provider.dart';
 import '../services/database_service.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+
 
 class StudentAssignmentDetailScreen extends StatefulWidget {
   final Assignment assignment;
@@ -156,12 +158,12 @@ class _StudentAssignmentDetailScreenState extends State<StudentAssignmentDetailS
     final assignment = widget.assignment;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0C29),
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text('Assignment Details', style: TextStyle(color: Colors.white)),
-        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text('Assignment Details', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+        iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurface),
       ),
       body: Consumer<P2PProvider>(
         builder: (context, p2p, _) {
@@ -175,32 +177,32 @@ class _StudentAssignmentDetailScreenState extends State<StudentAssignmentDetailS
             // Assignment info
             Text(
               assignment.title,
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
-            ),
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
+            ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1, end: 0, curve: Curves.easeOutCubic),
             const SizedBox(height: 8),
             Text(
               'Assigned by ${widget.teacherName}',
-              style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.6)),
-            ),
+              style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
+            ).animate().fadeIn(duration: 400.ms, delay: 100.ms).slideY(begin: 0.1, end: 0, curve: Curves.easeOutCubic),
             const SizedBox(height: 16),
             
             Row(
               children: [
                 if (assignment.dueDate != null) ...[
-                  Icon(Icons.calendar_today, size: 14, color: Colors.orange.shade300),
+                  Icon(Icons.calendar_today_rounded, size: 14, color: Theme.of(context).colorScheme.error),
                   const SizedBox(width: 4),
                   Text(
                     'Due ${DateFormat('MMM d, yhm').format(assignment.dueDate!)}',
-                    style: TextStyle(color: Colors.orange.shade300, fontSize: 13),
+                    style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 13),
                   ),
                   const SizedBox(width: 16),
                 ],
                 if (assignment.maxScore != null) ...[
-                  const Icon(Icons.score, size: 14, color: Color(0xFF00C9A7)),
+                  Icon(Icons.star_rounded, size: 14, color: Theme.of(context).colorScheme.primary),
                   const SizedBox(width: 4),
                   Text(
                     '${assignment.maxScore} pts',
-                    style: const TextStyle(color: Color(0xFF00C9A7), fontSize: 13),
+                    style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: 13),
                   ),
                 ],
               ],
@@ -208,17 +210,17 @@ class _StudentAssignmentDetailScreenState extends State<StudentAssignmentDetailS
             
             const SizedBox(height: 24),
             if (assignment.description.isNotEmpty) ...[
-              const Text('Instructions', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
+              Text('Instructions', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
               const SizedBox(height: 8),
               Text(
                 assignment.description,
-                style: const TextStyle(fontSize: 15, color: Colors.white70, height: 1.5),
+                style: TextStyle(fontSize: 15, color: Theme.of(context).colorScheme.onSurfaceVariant, height: 1.5),
               ),
               const SizedBox(height: 24),
             ],
 
             if (assignment.hasAttachments) ...[
-              const Text('Reference Materials', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
+              Text('Reference Materials', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
@@ -229,15 +231,15 @@ class _StudentAssignmentDetailScreenState extends State<StudentAssignmentDetailS
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.08),
-                        borderRadius: BorderRadius.circular(8),
+                        color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.attach_file, size: 16, color: Colors.white70),
+                          Icon(Icons.attach_file_rounded, size: 16, color: Theme.of(context).colorScheme.primary),
                           const SizedBox(width: 8),
-                          Text(a.fileName, style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                          Text(a.fileName, style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: 13, fontWeight: FontWeight.bold)),
                         ],
                       ),
                     ),
@@ -247,19 +249,20 @@ class _StudentAssignmentDetailScreenState extends State<StudentAssignmentDetailS
               const SizedBox(height: 32),
             ],
 
-            const Divider(color: Colors.white24),
+            Divider(color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.3)),
             const SizedBox(height: 24),
-            const Text('Your Work', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+            Text('Your Work', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
             const SizedBox(height: 16),
             
             if (_isLoading)
               const Center(child: CircularProgressIndicator())
             else if (latestSub != null)
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E1E2E),
-                  borderRadius: BorderRadius.circular(12),
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.2)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -267,24 +270,24 @@ class _StudentAssignmentDetailScreenState extends State<StudentAssignmentDetailS
                     Row(
                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                        children: [
-                         const Text('Submitted Work', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.bold)),
+                         Text('Submitted Work', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontWeight: FontWeight.bold)),
                          if (latestSub.isReturned)
                            Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
-                                color: Colors.greenAccent.withOpacity(0.2),
+                                color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text('Graded: ${latestSub.score} / ${assignment.maxScore ?? 100}', 
-                                style: const TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold)),
+                                style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
                            )
                          else
-                           const Text('Turned In', style: TextStyle(color: Colors.white54, fontStyle: FontStyle.italic)),
+                           Text('Turned In', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontStyle: FontStyle.italic)),
                        ]
                     ),
                     const SizedBox(height: 12),
                     if (latestSub.content.isNotEmpty) ...[
-                      Text(latestSub.content, style: const TextStyle(color: Colors.white, height: 1.5)),
+                      Text(latestSub.content, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, height: 1.5)),
                       const SizedBox(height: 12),
                     ],
                     
@@ -293,13 +296,14 @@ class _StudentAssignmentDetailScreenState extends State<StudentAssignmentDetailS
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
-                        children: latestSub.attachments.map((a) {
+                         children: latestSub.attachments.map((a) {
                            return ActionChip(
-                             backgroundColor: Colors.white.withOpacity(0.08),
-                             labelStyle: const TextStyle(color: Colors.white70, fontSize: 13),
+                             backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                             labelStyle: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: 13, fontWeight: FontWeight.bold),
                              label: Text(a.fileName),
-                             avatar: const Icon(Icons.attach_file, size: 14, color: Colors.white54),
+                             avatar: Icon(Icons.attach_file_rounded, size: 14, color: Theme.of(context).colorScheme.primary),
                              onPressed: () => _openAttachment(a.filePath),
+                             side: BorderSide.none,
                            );
                         }).toList(),
                       ),
@@ -311,17 +315,17 @@ class _StudentAssignmentDetailScreenState extends State<StudentAssignmentDetailS
               TextField(
                 controller: _contentController,
                 maxLines: 6,
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                 decoration: InputDecoration(
                   hintText: 'Type your answer or comments here...',
-                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
+                  hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5)),
                   filled: true,
-                  fillColor: const Color(0xFF1E1E2E),
+                  fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16),
                     borderSide: BorderSide.none,
                   ),
-                  contentPadding: const EdgeInsets.all(16),
+                  contentPadding: const EdgeInsets.all(20),
                 ),
               ),
               const SizedBox(height: 16),
@@ -333,23 +337,24 @@ class _StudentAssignmentDetailScreenState extends State<StudentAssignmentDetailS
                   children: List.generate(_selectedFiles.length, (index) {
                     final file = _selectedFiles[index];
                     return Container(
-                      padding: const EdgeInsets.all(10),
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.08),
+                        color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.white.withOpacity(0.1)),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          Icon(Icons.attach_file_rounded, size: 14, color: Theme.of(context).colorScheme.primary),
+                          const SizedBox(width: 8),
                           Text(
                             file.name,
-                            style: const TextStyle(color: Colors.white70, fontSize: 13),
+                            style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: 13, fontWeight: FontWeight.bold),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 12),
                           GestureDetector(
                             onTap: () => _removeFile(index),
-                            child: const Icon(Icons.close_rounded, size: 16, color: Colors.white54),
+                            child: Icon(Icons.close_rounded, size: 16, color: Theme.of(context).colorScheme.error),
                           ),
                         ],
                       ),
@@ -364,19 +369,20 @@ class _StudentAssignmentDetailScreenState extends State<StudentAssignmentDetailS
                 children: [
                   TextButton.icon(
                     onPressed: _pickFiles,
-                    icon: const Icon(Icons.attach_file, color: Color(0xFF00C9A7)),
-                    label: const Text('Attach Files', style: TextStyle(color: Color(0xFF00C9A7))),
+                    icon: Icon(Icons.attach_file_rounded, color: Theme.of(context).colorScheme.primary),
+                    label: Text('Attach Files', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
                   ),
-                  ElevatedButton(
+                  ElevatedButton.icon(
                     onPressed: _isTurningIn ? null : _turnIn,
+                    icon: Icon(Icons.send_rounded, size: 18, color: Theme.of(context).colorScheme.onPrimary),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF6C63FF),
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     ),
-                    child: _isTurningIn
-                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                        : const Text('Turn In', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    label: _isTurningIn
+                        ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Theme.of(context).colorScheme.onPrimary, strokeWidth: 2))
+                        : Text('Turn In', style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),
