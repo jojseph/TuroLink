@@ -7,6 +7,8 @@ import '../models/post.dart';
 import '../models/attachment.dart';
 import '../models/assignment.dart';
 import '../models/submission.dart';
+import '../models/forum_thread.dart';
+import '../models/forum_reply.dart';
 import '../services/p2p_service.dart';
 import '../services/database_service.dart';
 import 'package:uuid/uuid.dart';
@@ -60,6 +62,8 @@ class P2PProvider extends ChangeNotifier {
   final List<Post> _posts = [];
   final List<Assignment> _assignments = [];
   final List<Submission> _submissions = [];
+  final List<ForumThread> _forumThreads = [];
+  final Map<String, List<ForumReply>> _threadReplies = {}; // threadId -> replies
 
   void _updateOrAddSubmission(Submission submission) {
     final index = _submissions.indexWhere((s) => s.id == submission.id);
@@ -96,12 +100,17 @@ class P2PProvider extends ChangeNotifier {
   List<Post> get posts => List.unmodifiable(_posts);
   List<Assignment> get assignments => List.unmodifiable(_assignments);
   List<Submission> get submissions => List.unmodifiable(_submissions);
+  List<ForumThread> get forumThreads => List.unmodifiable(_forumThreads);
   List<DiscoveredPeer> get discoveredPeers =>
       List.unmodifiable(_discoveredPeers);
   List<ConnectedStudent> get connectedStudents =>
       List.unmodifiable(_connectedStudents);
   Map<String, double> get fileTransferProgress =>
       Map.unmodifiable(_fileTransferProgress);
+
+  List<ForumReply> getRepliesForThread(String threadId) {
+    return List.unmodifiable(_threadReplies[threadId] ?? []);
+  }
 
   P2PProvider() {
     _setupCallbacks();
@@ -141,6 +150,15 @@ class P2PProvider extends ChangeNotifier {
     final started = await _p2pService.startAdvertising(userName);
     _statusMessage =
         started ? 'Broadcasting — waiting for students...' : 'Failed to start';
+    
+    // Load forum threads
+    _forumThreads.clear();
+    _forumThreads.addAll(await _dbService.getForumThreadsForClassroom(classroom.id));
+    _threadReplies.clear();
+    for (var thread in _forumThreads) {
+      _threadReplies[thread.id] = await _dbService.getForumRepliesForThread(thread.id);
+    }
+
     notifyListeners();
   }
 
@@ -330,6 +348,211 @@ class P2PProvider extends ChangeNotifier {
     return assignment;
   }
 
+  /// Broadcast a newly created assignment (e.g. from Quiz Editor)
+  void broadcastNewAssignment(Assignment assignment) {
+    if (_state != P2PState.advertising) return;
+
+    final authenticatedIds = _connectedStudents
+        .where((s) => s.isAuthenticated)
+        .map((s) => s.endpointId)
+        .toList();
+
+    if (authenticatedIds.isNotEmpty) {
+      _p2pService.broadcastMessage(
+        authenticatedIds,
+        P2PMessage(
+          type: P2PMessageType.newAssignment,
+          data: assignment.toJson(),
+        ),
+      );
+    }
+  }
+
+  /// Create a new forum thread and broadcast it
+  Future<ForumThread> createForumThread(String title, String content, String authorId, String authorName,
+      {List<String> filePaths = const []}) async {
+    final threadId = _uuid.v4();
+    final attachments = <Attachment>[];
+
+    for (final path in filePaths) {
+      final file = File(path);
+      if (await file.exists()) {
+        final fileName = path.split(Platform.pathSeparator).last;
+        final ext = fileName.contains('.') ? fileName.split('.').last.toLowerCase() : 'unknown';
+        final fileSize = await file.length();
+        attachments.add(Attachment(
+          id: _uuid.v4(),
+          threadId: threadId,
+          fileName: fileName,
+          fileType: ext,
+          filePath: path,
+          fileSize: fileSize,
+        ));
+      }
+    }
+
+    final thread = ForumThread(
+      id: threadId,
+      classroomId: _currentClassroom!.id,
+      authorId: authorId,
+      authorName: authorName,
+      title: title,
+      content: content,
+      attachments: attachments,
+    );
+
+    await _dbService.saveForumThread(thread);
+    _forumThreads.insert(0, thread);
+    _threadReplies[threadId] = [];
+
+    // Broadcast to all authenticated peers
+    final peers = _getSyncPeers();
+    if (peers.isNotEmpty) {
+      await _p2pService.broadcastMessage(
+        peers,
+        P2PMessage(
+          type: P2PMessageType.newForumThread,
+          data: thread.toMap(),
+        ),
+      );
+
+      // Send attachments
+      for (final attachment in attachments) {
+        for (final endpointId in peers) {
+          final payloadId = await _p2pService.sendFilePayload(endpointId, attachment.filePath);
+          if (payloadId != null) {
+            await _p2pService.sendMessage(
+              endpointId,
+              P2PMessage(
+                type: P2PMessageType.fileMetadata,
+                data: {
+                  'payloadId': payloadId,
+                  'attachmentId': attachment.id,
+                  'threadId': threadId,
+                  'fileName': attachment.fileName,
+                  'fileType': attachment.fileType,
+                  'fileSize': attachment.fileSize,
+                },
+              ),
+            );
+          }
+        }
+      }
+    }
+
+    notifyListeners();
+    return thread;
+  }
+
+  /// Create a new forum reply and broadcast it
+  Future<ForumReply> createForumReply(String threadId, String content, String authorId, String authorName, bool isTeacher,
+      {List<String> filePaths = const []}) async {
+    final replyId = _uuid.v4();
+    final attachments = <Attachment>[];
+
+    for (final path in filePaths) {
+      final file = File(path);
+      if (await file.exists()) {
+        final fileName = path.split(Platform.pathSeparator).last;
+        final ext = fileName.contains('.') ? fileName.split('.').last.toLowerCase() : 'unknown';
+        final fileSize = await file.length();
+        attachments.add(Attachment(
+          id: _uuid.v4(),
+          replyId: replyId,
+          fileName: fileName,
+          fileType: ext,
+          filePath: path,
+          fileSize: fileSize,
+        ));
+      }
+    }
+
+    final reply = ForumReply(
+      id: replyId,
+      threadId: threadId,
+      authorId: authorId,
+      authorName: authorName,
+      content: content,
+      isTeacher: isTeacher,
+      attachments: attachments,
+    );
+
+    await _dbService.saveForumReply(reply);
+    
+    if (!_threadReplies.containsKey(threadId)) {
+      _threadReplies[threadId] = [];
+    }
+    _threadReplies[threadId]!.add(reply);
+
+    // Update reply count in local list
+    final threadIndex = _forumThreads.indexWhere((t) => t.id == threadId);
+    if (threadIndex != -1) {
+      final oldThread = _forumThreads[threadIndex];
+      _forumThreads[threadIndex] = ForumThread(
+        id: oldThread.id,
+        classroomId: oldThread.classroomId,
+        authorId: oldThread.authorId,
+        authorName: oldThread.authorName,
+        title: oldThread.title,
+        content: oldThread.content,
+        createdAt: oldThread.createdAt,
+        replyCount: oldThread.replyCount + 1,
+        isPinned: oldThread.isPinned,
+        attachments: oldThread.attachments,
+      );
+    }
+
+    // Broadcast to all authenticated peers
+    final peers = _getSyncPeers();
+    if (peers.isNotEmpty) {
+      await _p2pService.broadcastMessage(
+        peers,
+        P2PMessage(
+          type: P2PMessageType.newForumReply,
+          data: reply.toMap(),
+        ),
+      );
+
+      // Send attachments
+      for (final attachment in attachments) {
+        for (final endpointId in peers) {
+          final payloadId = await _p2pService.sendFilePayload(endpointId, attachment.filePath);
+          if (payloadId != null) {
+            await _p2pService.sendMessage(
+              endpointId,
+              P2PMessage(
+                type: P2PMessageType.fileMetadata,
+                data: {
+                  'payloadId': payloadId,
+                  'attachmentId': attachment.id,
+                  'replyId': replyId,
+                  'threadId': threadId,
+                  'fileName': attachment.fileName,
+                  'fileType': attachment.fileType,
+                  'fileSize': attachment.fileSize,
+                },
+              ),
+            );
+          }
+        }
+      }
+    }
+
+    notifyListeners();
+    return reply;
+  }
+
+  /// Helper to get all endpoints we should sync with (teacher/student depending on role)
+  List<String> _getSyncPeers() {
+    if (_state == P2PState.connected && _teacherEndpointId != null) {
+      return [_teacherEndpointId!];
+    }
+    return _connectedStudents
+        .where((s) => s.isAuthenticated)
+        .map((s) => s.endpointId)
+        .toList();
+  }
+
   /// Student: Turn in an assignment
   Future<bool> turnInAssignment(Submission submission) async {
     // 1. Save it locally as not synced
@@ -510,7 +733,7 @@ class P2PProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _onMessageReceived(String endpointId, P2PMessage message) {
+  void _onMessageReceived(String endpointId, P2PMessage message) async {
     switch (message.type) {
       case P2PMessageType.classroomInfo:
         // Student receives classroom info from teacher
@@ -566,6 +789,21 @@ class P2PProvider extends ChangeNotifier {
           // Connected to teacher: sync our unsynced submissions!
           _syncUnsyncedSubmissions(endpointId);
         }
+        
+        // Initial sync of forum data if we just joined a teacher or sync host
+        _p2pService.sendMessage(
+          endpointId,
+          P2PMessage(
+            type: P2PMessageType.syncForumThreads,
+            data: {
+              'threads': _forumThreads.map((t) => t.toMap()).toList(),
+            },
+          ),
+        );
+        
+        // Let's also sync replies for all threads we just sent/received? 
+        // Actually, the teacher will send them back in a moment or we send ours.
+        // For simplicity, let's just make sure both sides send their forum data.
         
         // Reset QR tracking variables
         _targetTeacherName = null;
@@ -734,8 +972,118 @@ class P2PProvider extends ChangeNotifier {
       case P2PMessageType.requestFiles:
         _handleRequestFiles(endpointId, message);
         break;
+
+      case P2PMessageType.newForumThread:
+        final thread = ForumThread.fromMap(Map<String, dynamic>.from(message.data));
+        await _dbService.saveForumThread(thread);
+        if (!_forumThreads.any((t) => t.id == thread.id)) {
+          _forumThreads.insert(0, thread);
+          _threadReplies[thread.id] = [];
+        }
+        _statusMessage = 'New forum thread: ${thread.title}';
+        notifyListeners();
+        break;
+
+      case P2PMessageType.newForumReply:
+        final reply = ForumReply.fromMap(Map<String, dynamic>.from(message.data));
+        await _dbService.saveForumReply(reply);
+        
+        if (!_threadReplies.containsKey(reply.threadId)) {
+          _threadReplies[reply.threadId] = [];
+        }
+        
+        if (!_threadReplies[reply.threadId]!.any((r) => r.id == reply.id)) {
+          _threadReplies[reply.threadId]!.add(reply);
+          
+          // Update reply count in local list
+          final threadIndex = _forumThreads.indexWhere((t) => t.id == reply.threadId);
+          if (threadIndex != -1) {
+            final oldThread = _forumThreads[threadIndex];
+            _forumThreads[threadIndex] = ForumThread(
+              id: oldThread.id,
+              classroomId: oldThread.classroomId,
+              authorId: oldThread.authorId,
+              authorName: oldThread.authorName,
+              title: oldThread.title,
+              content: oldThread.content,
+              createdAt: oldThread.createdAt,
+              replyCount: oldThread.replyCount + 1,
+              isPinned: oldThread.isPinned,
+              attachments: oldThread.attachments,
+            );
+          }
+        }
+        _statusMessage = 'New reply in forum';
+        notifyListeners();
+        break;
+
+      case P2PMessageType.syncForumThreads:
+        final threadsJson = message.data['threads'] as List;
+        final syncedThreads = threadsJson
+            .map((t) => ForumThread.fromMap(Map<String, dynamic>.from(t as Map)))
+            .toList();
+
+        int newCount = 0;
+        final missingAttachmentIds = <String>[];
+        
+        for (final thread in syncedThreads) {
+          if (!_forumThreads.any((t) => t.id == thread.id)) {
+            newCount++;
+            await _dbService.saveForumThread(thread);
+            _forumThreads.add(thread);
+            _threadReplies[thread.id] = [];
+          }
+          
+          for (final attachment in thread.attachments) {
+            if (!File(attachment.filePath).existsSync()) {
+              missingAttachmentIds.add(attachment.id);
+            }
+          }
+        }
+        
+        _forumThreads.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        
+        // After receiving threads, ask for replies
+        _p2pService.sendMessage(
+          endpointId,
+          P2PMessage(
+            type: P2PMessageType.syncForumReplies,
+            data: {
+              'replies': _threadReplies.values.expand((x) => x).map((r) => r.toMap()).toList(),
+            },
+          ),
+        );
+
+        if (missingAttachmentIds.isNotEmpty) {
+           _p2pService.sendMessage(endpointId, P2PMessage(
+              type: P2PMessageType.requestFiles,
+              data: {'attachmentIds': missingAttachmentIds},
+           ));
+        }
+        
+        notifyListeners();
+        break;
+
+      case P2PMessageType.syncForumReplies:
+        final repliesJson = message.data['replies'] as List;
+        final syncedReplies = repliesJson
+            .map((r) => ForumReply.fromMap(Map<String, dynamic>.from(r as Map)))
+            .toList();
+
+        for (final reply in syncedReplies) {
+          if (!_threadReplies.containsKey(reply.threadId)) {
+            _threadReplies[reply.threadId] = [];
+          }
+          
+          if (!_threadReplies[reply.threadId]!.any((r) => r.id == reply.id)) {
+            await _dbService.saveForumReply(reply);
+            _threadReplies[reply.threadId]!.add(reply);
+          }
+        }
+        notifyListeners();
+        break;
     }
-  }
+}
 
   /// Handle file requests (student syncing)
   Future<void> _handleRequestFiles(String endpointId, P2PMessage message) async {
@@ -802,6 +1150,71 @@ class P2PProvider extends ChangeNotifier {
           break;
         }
       }
+
+      if (found) continue;
+
+      // Search in forum threads
+      for (final thread in _forumThreads) {
+        final attachments = thread.attachments.where((a) => a.id == id).toList();
+        if (attachments.isNotEmpty) {
+          final attachment = attachments.first;
+          final file = File(attachment.filePath);
+          if (file.existsSync()) {
+            final payloadId = await _p2pService.sendFilePayload(endpointId, attachment.filePath);
+            if (payloadId != null) {
+              await _p2pService.sendMessage(
+                endpointId,
+                P2PMessage(
+                  type: P2PMessageType.fileMetadata,
+                  data: {
+                    'payloadId': payloadId,
+                    'attachmentId': attachment.id,
+                    'threadId': thread.id,
+                    'fileName': attachment.fileName,
+                    'fileType': attachment.fileType,
+                    'fileSize': attachment.fileSize,
+                  },
+                ),
+              );
+            }
+          }
+          found = true;
+          break;
+        }
+      }
+
+      if (found) continue;
+
+      // Search in forum replies
+      for (final replies in _threadReplies.values) {
+        final replyWithAttachment = replies.where((r) => r.attachments.any((a) => a.id == id)).toList();
+        if (replyWithAttachment.isNotEmpty) {
+           final reply = replyWithAttachment.first;
+           final attachment = reply.attachments.firstWhere((a) => a.id == id);
+           final file = File(attachment.filePath);
+           if (file.existsSync()) {
+             final payloadId = await _p2pService.sendFilePayload(endpointId, attachment.filePath);
+             if (payloadId != null) {
+               await _p2pService.sendMessage(
+                 endpointId,
+                 P2PMessage(
+                   type: P2PMessageType.fileMetadata,
+                   data: {
+                     'payloadId': payloadId,
+                     'attachmentId': attachment.id,
+                     'replyId': reply.id,
+                     'threadId': reply.threadId,
+                     'fileName': attachment.fileName,
+                     'fileType': attachment.fileType,
+                     'fileSize': attachment.fileSize,
+                   },
+                 ),
+               );
+             }
+           }
+           break;
+        }
+      }
     }
   }
 
@@ -811,6 +1224,8 @@ class P2PProvider extends ChangeNotifier {
     final postId = data['postId'] as String?;
     final assignmentId = data['assignmentId'] as String?;
     final submissionId = data['submissionId'] as String?;
+    final threadId = data['threadId'] as String?;
+    final replyId = data['replyId'] as String?;
     final fileName = data['fileName'] as String;
     final fileType = data['fileType'] as String;
     final fileSize = data['fileSize'] as int;
@@ -822,6 +1237,8 @@ class P2PProvider extends ChangeNotifier {
       'postId': postId,
       'assignmentId': assignmentId,
       'submissionId': submissionId,
+      'threadId': threadId,
+      'replyId': replyId,
       'fileName': fileName,
       'fileType': fileType,
       'fileSize': fileSize,
@@ -888,6 +1305,8 @@ class P2PProvider extends ChangeNotifier {
         postId: metadata['postId'] as String?,
         assignmentId: metadata['assignmentId'] as String?,
         submissionId: metadata['submissionId'] as String?,
+        threadId: metadata['threadId'] as String?,
+        replyId: metadata['replyId'] as String?,
         fileName: fileName,
         fileType: fileType,
         filePath: targetPath,
@@ -959,6 +1378,55 @@ class P2PProvider extends ChangeNotifier {
             attachments: updatedAttachments,
           );
           _submissions[index] = updated;
+        }
+      } else if (attachment.replyId != null) {
+        final replyId = attachment.replyId!;
+        for (final threadId in _threadReplies.keys) {
+          final index = _threadReplies[threadId]!.indexWhere((r) => r.id == replyId);
+          if (index != -1) {
+            final existing = _threadReplies[threadId]![index];
+            final updatedAttachments = existing.attachments
+                .where((a) => a.id != attachment.id)
+                .toList()
+              ..add(attachment);
+              
+            final updated = ForumReply(
+              id: existing.id,
+              threadId: existing.threadId,
+              authorId: existing.authorId,
+              authorName: existing.authorName,
+              content: existing.content,
+              createdAt: existing.createdAt,
+              isTeacher: existing.isTeacher,
+              attachments: updatedAttachments,
+            );
+            _threadReplies[threadId]![index] = updated;
+            break;
+          }
+        }
+      } else if (attachment.threadId != null) {
+        final threadId = attachment.threadId!;
+        final index = _forumThreads.indexWhere((t) => t.id == threadId);
+        if (index != -1) {
+          final existing = _forumThreads[index];
+          final updatedAttachments = existing.attachments
+              .where((a) => a.id != attachment.id)
+              .toList()
+            ..add(attachment);
+            
+          final updated = ForumThread(
+            id: existing.id,
+            classroomId: existing.classroomId,
+            authorId: existing.authorId,
+            authorName: existing.authorName,
+            title: existing.title,
+            content: existing.content,
+            createdAt: existing.createdAt,
+            replyCount: existing.replyCount,
+            isPinned: existing.isPinned,
+            attachments: updatedAttachments,
+          );
+          _forumThreads[index] = updated;
         }
       }
 
@@ -1034,6 +1502,17 @@ class P2PProvider extends ChangeNotifier {
         ),
       );
 
+      // Send all existing forum threads
+      _p2pService.sendMessage(
+        endpointId,
+        P2PMessage(
+          type: P2PMessageType.syncForumThreads,
+          data: {
+            'threads': _forumThreads.map((t) => t.toMap()).toList(),
+          },
+        ),
+      );
+
       // Fetch and send only this student's returned submissions
       if (deviceId != null) {
         final returnedSubs = await _dbService.getReturnedSubmissionsForStudent(deviceId);
@@ -1079,9 +1558,23 @@ class P2PProvider extends ChangeNotifier {
         await _sendFileWithMetadata(endpointId, attachment, null, assignment.id);
       }
     }
+
+    for (final thread in _forumThreads) {
+      for (final attachment in thread.attachments) {
+        await _sendFileWithMetadata(endpointId, attachment, null, null, threadId: thread.id);
+      }
+    }
+
+    for (final replies in _threadReplies.values) {
+      for (final reply in replies) {
+        for (final attachment in reply.attachments) {
+          await _sendFileWithMetadata(endpointId, attachment, null, null, threadId: reply.threadId, replyId: reply.id);
+        }
+      }
+    }
   }
 
-  Future<void> _sendFileWithMetadata(String endpointId, Attachment attachment, String? postId, String? assignmentId) async {
+  Future<void> _sendFileWithMetadata(String endpointId, Attachment attachment, String? postId, String? assignmentId, {String? threadId, String? replyId}) async {
     final file = File(attachment.filePath);
     if (await file.exists()) {
       // Send file first to get ID
@@ -1098,6 +1591,8 @@ class P2PProvider extends ChangeNotifier {
               'attachmentId': attachment.id,
               if (postId != null) 'postId': postId,
               if (assignmentId != null) 'assignmentId': assignmentId,
+              if (threadId != null) 'threadId': threadId,
+              if (replyId != null) 'replyId': replyId,
               'fileName': attachment.fileName,
               'fileType': attachment.fileType,
               'fileSize': attachment.fileSize,

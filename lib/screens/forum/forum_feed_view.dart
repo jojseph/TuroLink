@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../../models/classroom.dart';
 import '../../models/forum_thread.dart';
 import '../../services/database_service.dart';
+import '../../providers/p2p_provider.dart';
 import 'forum_thread_detail_screen.dart';
 import 'create_forum_post_screen.dart';
 
@@ -23,24 +24,10 @@ class ForumFeedView extends StatefulWidget {
 
 class _ForumFeedViewState extends State<ForumFeedView> {
   final DatabaseService _dbService = DatabaseService();
-  List<ForumThread> _threads = [];
-  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadThreads();
-  }
-
-  Future<void> _loadThreads() async {
-    setState(() => _isLoading = true);
-    final threads = await _dbService.getForumThreadsForClassroom(widget.classroom.id);
-    if (mounted) {
-      setState(() {
-        _threads = threads;
-        _isLoading = false;
-      });
-    }
   }
 
   String _formatTime(DateTime dt) {
@@ -56,18 +43,16 @@ class _ForumFeedViewState extends State<ForumFeedView> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: _isLoading
-          ? Center(child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary))
-          : _threads.isEmpty
+      body: Consumer<P2PProvider>(
+        builder: (context, p2p, child) {
+          final threads = p2p.forumThreads;
+          return threads.isEmpty
               ? _buildEmptyState(context)
-              : RefreshIndicator(
-                  onRefresh: _loadThreads,
-                  color: Theme.of(context).colorScheme.primary,
-                  child: ListView.builder(
+              : ListView.builder(
                     padding: const EdgeInsets.all(20),
-                    itemCount: _threads.length,
+                    itemCount: threads.length,
                     itemBuilder: (context, index) {
-                      final thread = _threads[index];
+                      final thread = threads[index];
                       return _ForumThreadCard(
                         thread: thread,
                         formatTime: _formatTime,
@@ -81,12 +66,12 @@ class _ForumFeedViewState extends State<ForumFeedView> {
                               ),
                             ),
                           );
-                          _loadThreads(); // Reload to get updated reply counts
                         },
                       );
                     },
-                  ),
-                ),
+                  );
+        },
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           await Navigator.push(
@@ -98,7 +83,6 @@ class _ForumFeedViewState extends State<ForumFeedView> {
               ),
             ),
           );
-          _loadThreads();
         },
         backgroundColor: Theme.of(context).colorScheme.primary,
         icon: const Icon(Icons.add_comment_rounded, color: Colors.white),

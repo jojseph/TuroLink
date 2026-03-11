@@ -7,6 +7,7 @@ import '../../models/forum_thread.dart';
 import '../../models/attachment.dart';
 import '../../services/database_service.dart';
 import '../../providers/profile_provider.dart';
+import '../../providers/p2p_provider.dart';
 
 class CreateForumPostScreen extends StatefulWidget {
   final Classroom classroom;
@@ -43,40 +44,15 @@ class _CreateForumPostScreenState extends State<CreateForumPostScreen> {
     setState(() => _isPosting = true);
 
     final profile = Provider.of<ProfileProvider>(context, listen: false).profile!;
-    final threadId = DateTime.now().millisecondsSinceEpoch.toString();
-    
-    final attachments = <Attachment>[];
-    for (final file in _selectedFiles) {
-      if (file.path != null) {
-        final f = File(file.path!);
-        if (await f.exists()) {
-          final fileName = file.name;
-          final ext = fileName.contains('.') ? fileName.split('.').last.toLowerCase() : 'unknown';
-          final fileSize = await f.length();
-          attachments.add(Attachment(
-            id: DateTime.now().microsecondsSinceEpoch.toString(),
-            threadId: threadId,
-            fileName: fileName,
-            fileType: ext,
-            filePath: file.path!,
-            fileSize: fileSize,
-          ));
-        }
-      }
-    }
+    final p2pProvider = Provider.of<P2PProvider>(context, listen: false);
 
-    final thread = ForumThread(
-      id: threadId,
-      classroomId: widget.classroom.id,
-      authorId: profile.deviceId,
-      authorName: profile.displayName,
-      title: title,
-      content: content,
-      isPinned: false, // Could add a toggle for teachers
-      attachments: attachments,
+    await p2pProvider.createForumThread(
+      title,
+      content,
+      profile.deviceId,
+      profile.displayName,
+      filePaths: _selectedFiles.map((f) => f.path!).where((p) => p != null).toList(),
     );
-
-    await _dbService.saveForumThread(thread);
 
     if (mounted) {
       Navigator.pop(context);

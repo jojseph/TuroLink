@@ -83,4 +83,6 @@ class Assignment {
 
   /// Whether this assignment has any file attachments
   bool get hasAttachments => attachments.isNotEmpty;
+
+  bool get isQuiz => type == 'quiz';
 }

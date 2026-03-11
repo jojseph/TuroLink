@@ -9,6 +9,7 @@ import '../../models/forum_reply.dart';
 import '../../models/attachment.dart';
 import '../../services/database_service.dart';
 import '../../providers/profile_provider.dart';
+import '../../providers/p2p_provider.dart';
 
 class ForumThreadDetailScreen extends StatefulWidget {
   final ForumThread thread;
@@ -27,8 +28,6 @@ class ForumThreadDetailScreen extends StatefulWidget {
 class _ForumThreadDetailScreenState extends State<ForumThreadDetailScreen> {
   final DatabaseService _dbService = DatabaseService();
   final _replyController = TextEditingController();
-  List<ForumReply> _replies = [];
-  bool _isLoading = true;
   bool _isPosting = false;
   List<PlatformFile> _selectedFiles = [];
   
@@ -49,15 +48,7 @@ class _ForumThreadDetailScreenState extends State<ForumThreadDetailScreen> {
   }
 
   Future<void> _loadReplies() async {
-    setState(() => _isLoading = true);
-    final replies = await _dbService.getForumRepliesForThread(widget.thread.id);
-    if (mounted) {
-      setState(() {
-        _replies = replies;
-        _isLoading = false;
-      });
-      // Scroll to bottom after loading if needed
-    }
+    // We now get replies from P2PProvider!
   }
 
   void _postReply() async {
@@ -67,44 +58,19 @@ class _ForumThreadDetailScreenState extends State<ForumThreadDetailScreen> {
     setState(() => _isPosting = true);
 
     final profile = Provider.of<ProfileProvider>(context, listen: false).profile!;
-    final replyId = DateTime.now().millisecondsSinceEpoch.toString();
-    
-    final attachments = <Attachment>[];
-    for (final file in _selectedFiles) {
-      if (file.path != null) {
-        final f = File(file.path!);
-        if (await f.exists()) {
-          final fileName = file.name;
-          final ext = fileName.contains('.') ? fileName.split('.').last.toLowerCase() : 'unknown';
-          final fileSize = await f.length();
-          attachments.add(Attachment(
-            id: DateTime.now().microsecondsSinceEpoch.toString(),
-            replyId: replyId,
-            fileName: fileName,
-            fileType: ext,
-            filePath: file.path!,
-            fileSize: fileSize,
-          ));
-        }
-      }
-    }
+    final p2pProvider = Provider.of<P2PProvider>(context, listen: false);
 
-    final reply = ForumReply(
-      id: replyId,
-      threadId: widget.thread.id,
-      authorId: profile.deviceId,
-      authorName: profile.displayName,
-      content: content,
-      isTeacher: widget.isTeacher,
-      attachments: attachments,
+    await p2pProvider.createForumReply(
+      widget.thread.id,
+      content,
+      profile.deviceId,
+      profile.displayName,
+      widget.isTeacher,
+      filePaths: _selectedFiles.map((f) => f.path!).where((p) => p != null).toList(),
     );
-
-    await _dbService.saveForumReply(reply);
     
     _replyController.clear();
     _selectedFiles.clear();
-    
-    await _loadReplies();
     
     if (mounted) {
       setState(() => _isPosting = false);
@@ -157,31 +123,40 @@ class _ForumThreadDetailScreenState extends State<ForumThreadDetailScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: _isLoading 
-                ? const Center(child: CircularProgressIndicator())
-                : ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.all(20),
-                    itemCount: _replies.length + 1, // +1 for the original thread
-                    itemBuilder: (context, index) {
-                      if (index == 0) {
-                        return _buildOriginalThread();
-                      }
-                      final reply = _replies[index - 1];
-                      return _buildReplyCard(reply);
-                    },
-                  ),
-          ),
-          _buildReplyBar(),
-        ],
+      body: Consumer<P2PProvider>(
+        builder: (context, p2p, child) {
+          final replies = p2p.getRepliesForThread(widget.thread.id);
+          // Get the latest thread instance from provider to see updates (like attachments)
+          final thread = p2p.forumThreads.firstWhere(
+            (t) => t.id == widget.thread.id,
+            orElse: () => widget.thread,
+          );
+
+          return Column(
+            children: [
+              Expanded(
+                child: ListView.builder(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.all(20),
+                        itemCount: replies.length + 1, // +1 for the original thread
+                        itemBuilder: (context, index) {
+                          if (index == 0) {
+                            return _buildOriginalThread(thread);
+                          }
+                          final reply = replies[index - 1];
+                          return _buildReplyCard(reply);
+                        },
+                      ),
+              ),
+              _buildReplyBar(),
+            ],
+          );
+        },
       ),
     );
   }
 
-  Widget _buildOriginalThread() {
+  Widget _buildOriginalThread(ForumThread thread) {
     return Container(
       margin: const EdgeInsets.only(bottom: 24),
       padding: const EdgeInsets.all(20),
@@ -201,7 +176,7 @@ class _ForumThreadDetailScreenState extends State<ForumThreadDetailScreen> {
                 radius: 16,
                 backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
                 child: Text(
-                  widget.thread.authorName[0].toUpperCase(),
+                  thread.authorName[0].toUpperCase(),
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
@@ -215,11 +190,11 @@ class _ForumThreadDetailScreenState extends State<ForumThreadDetailScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      widget.thread.authorName,
+                      thread.authorName,
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                     ),
                     Text(
-                      _formatTime(widget.thread.createdAt),
+                      _formatTime(thread.createdAt),
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontSize: 12,
@@ -232,22 +207,22 @@ class _ForumThreadDetailScreenState extends State<ForumThreadDetailScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            widget.thread.title,
+            thread.title,
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           Text(
-            widget.thread.content,
+            thread.content,
             style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 15, height: 1.5),
           ),
-          if (widget.thread.attachments.isNotEmpty) ...[
+          if (thread.attachments.isNotEmpty) ...[
             const SizedBox(height: 16),
             const Divider(color: Colors.white12),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: widget.thread.attachments.map((a) => _buildAttachmentChip(a)).toList(),
+              children: thread.attachments.map((a) => _buildAttachmentChip(a)).toList(),
             ),
           ],
         ],

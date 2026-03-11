@@ -50,3 +50,4 @@ analyze_output.txt
 build_log.txt
 test_nearby.dart
 agent/
+docs/

@@ -6,9 +6,11 @@ import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 import 'package:uuid/uuid.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
 import '../models/quiz.dart';
 import '../models/assignment.dart';
 import '../models/classroom.dart';
+import '../providers/p2p_provider.dart';
 import '../services/ai_chat_service.dart';
 import '../services/database_service.dart';
 
@@ -993,6 +995,8 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
     );
     final quizJson = jsonEncode(quiz.toJson());
 
+    final p2p = Provider.of<P2PProvider>(context, listen: false);
+
     for (final classroom in classrooms) {
       final assignment = Assignment(
         id: _uuid.v4(),
@@ -1003,6 +1007,11 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
         maxScore: _items.length.toDouble(),
       );
       await _dbService.saveAssignment(assignment);
+
+      // If we are currently live in this classroom, broadcast it!
+      if (p2p.state == P2PState.advertising && p2p.currentClassroom?.id == classroom.id) {
+        p2p.broadcastNewAssignment(assignment);
+      }
     }
 
     if (mounted) {

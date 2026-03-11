@@ -191,7 +191,11 @@ class _TeacherAssignmentDetailScreenState extends State<TeacherAssignmentDetailS
                                   Text('Turned in ${DateFormat('MMM d, h:mm a').format(sub.submittedAt)}', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5), fontSize: 12)),
                                   const SizedBox(height: 12),
                                   if (sub.content.isNotEmpty)
-                                    Text(sub.content, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14)),
+                                    if (widget.assignment.type == 'quiz')
+                                       Text('Quiz completed. Score: ${sub.score?.toInt() ?? 0} / ${widget.assignment.maxScore?.toInt() ?? 0}', 
+                                            style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold))
+                                    else
+                                      Text(sub.content, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14)),
                                   if (sub.attachments.isNotEmpty) ...[
                                     const SizedBox(height: 12),
                                     Wrap(

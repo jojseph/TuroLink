@@ -58,7 +58,9 @@ If you want to create an `.apk` file that can be shared and installed on any And
 1. Open your terminal in the root of the project folder (`TuroLink`).
 2. Run the following command:
    ```bash
-   flutter build apk --release
+   flutter build apk --release --no-tree-shake-icons
+
+   *(Note: If the `flutter` command is not recognized, you may need to use the full path to the executable, for example: `C:\Users\joseph\.gemini\antigravity\scratch\flutter_setup\flutter\bin\flutter.bat build apk --release --no-tree-shake-icons`)*
    ```
 3. Wait for the build process to finish. It will take a few minutes.
 4. Once completed, your APK will be available at this path inside the project:

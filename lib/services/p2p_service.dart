@@ -20,6 +20,10 @@ enum P2PMessageType {
   syncReturnedSubmissions,
   fileMetadata, // sent before a file payload to tell the receiver what to expect
   requestFiles, // sent by student to request specific missing file attachments
+  newForumThread,
+  newForumReply,
+  syncForumThreads,
+  syncForumReplies,
 }
 
 /// A structured message sent over P2P
