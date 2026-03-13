@@ -7,8 +7,6 @@ TuroLink is a Flutter application designed for creating and joining peer-to-peer
 - **Pitch + Demo:** [YouTube](https://youtu.be/667e4-XLki4)
 - **Report - Borneo:** [Google Drive](https://drive.google.com/drive/folders/1lVW6oYmO7mZtW9Xkt6cuS8FdJgW1Ncmq?usp=sharing)
 
-This guide provides instructions for anyone looking to set up, run, or build this project from scratch.
-
 ## 🚀 Prerequisites
 
 Before you can run or build the app, you need to have the Flutter SDK installed on your machine.
