@@ -2,9 +2,19 @@
 
 TuroLink is a Flutter application designed for creating and joining peer-to-peer (P2P) classrooms.
 
+## 📝 Project Description
+
+TuroLink is an innovative peer-to-peer (P2P) classroom solution built with Flutter, designed to facilitate learning and collaboration in environments with limited or no internet connectivity. By leveraging local network technologies, TuroLink allows educators and students to connect directly, share documents, and interact in real-time.
+
+**Key Highlights:**
+- **Offline First:** Seamless P2P communication using `nearby_connections`.
+- **On-Device AI:** Integrated AI assistance powered by **Google Gemma**.
+- **Secure Handling:** PDF generation and secure document sharing.
+- **Easy Onboarding:** QR-based connection and intuitive dashboard experience.
+
 ## 🔗 Quick Links
 
-- **Pitch + Demo:** [YouTube](https://youtu.be/667e4-XLki4)
+- **Pitch + Demo:** [YouTube](https://youtu.be/667e4-XLki4) (Backup Link: [Google Drive](https://drive.google.com/drive/folders/1MLIYqsAdG0JEr6-jt9iNSLSmvBFAnVsJ?usp=drive_link)) *[Note: Video is copyrighted; provided as a backup]*
 - **Report - Borneo:** [Google Drive](https://drive.google.com/drive/folders/1lVW6oYmO7mZtW9Xkt6cuS8FdJgW1Ncmq?usp=sharing)
 
 ## 🚀 Prerequisites
